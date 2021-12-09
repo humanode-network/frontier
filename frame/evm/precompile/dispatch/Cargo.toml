@@ -9,9 +9,9 @@ repository = "https://github.com/paritytech/frontier/"
 description = "DISPATCH precompiles for EVM pallet."
 
 [dependencies]
-sp-core = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-sp-io = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
+sp-core = { default-features = false, git = "https://github.com/paritytech/substrate", rev = "1a30fa2" }
+sp-io = { default-features = false, git = "https://github.com/paritytech/substrate", rev = "1a30fa2" }
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", rev = "1a30fa2" }
 pallet-evm = { version = "6.0.0-dev", default-features = false, path = "../.." }
 fp-evm = { version = "3.0.0-dev", default-features = false, path = "../../../../primitives/evm" }
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }

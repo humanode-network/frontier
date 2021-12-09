@@ -3024,7 +3024,7 @@ impl<B: BlockT> EthBlockDataCache<B> {
 		let outer_task_tx = task_tx.clone();
 		let outer_spawn_handle = spawn_handle.clone();
 
-		outer_spawn_handle.spawn("EthBlockDataCache", async move {
+		outer_spawn_handle.spawn("EthBlockDataCache", Some("frontier"), async move {
 			let mut blocks_cache = LruCache::<B::Hash, EthereumBlock>::new(blocks_cache_size);
 			let mut statuses_cache =
 				LruCache::<B::Hash, Vec<TransactionStatus>>::new(statuses_cache_size);
@@ -3144,7 +3144,7 @@ impl<B: BlockT> EthBlockDataCache<B> {
 		// the data.
 		wait_list.insert(block_hash.clone(), vec![response_tx]);
 
-		spawn_handle.spawn("EthBlockDataCache Worker", async move {
+		spawn_handle.spawn("EthBlockDataCache Worker", Some("frontier"), async move {
 			let handler = overrides
 				.schemas
 				.get(&schema)
