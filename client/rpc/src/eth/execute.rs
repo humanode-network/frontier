@@ -20,8 +20,10 @@ use std::sync::Arc;
 
 use ethereum_types::{H256, U256};
 use evm::{ExitError, ExitReason};
-use jsonrpc_core::{BoxFuture, Error, ErrorCode, Result, Value};
-
+use jsonrpsee::{
+	core::{Error as JsonRpseeError, RpcResult},
+	types::error::{CallError, ErrorCode, ErrorObject},
+};
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 use sc_network::ExHashT;
 use sc_transaction_pool::ChainApi;
@@ -42,7 +44,7 @@ use crate::{
 };
 
 /// Default JSONRPC error code return by geth
-pub const JSON_RPC_ERROR_DEFAULT: i64 = -32000;
+pub const JSON_RPC_ERROR_DEFAULT: i32 = -32000;
 
 impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A>
 where
@@ -54,7 +56,7 @@ where
 	BE::State: StateBackend<BlakeTwo256>,
 	A: ChainApi<Block = B> + 'static,
 {
-	pub fn call(&self, request: CallRequest, number: Option<BlockNumber>) -> Result<Bytes> {
+	pub fn call(&self, request: CallRequest, number: Option<BlockNumber>) -> RpcResult<Bytes> {
 		let CallRequest {
 			from,
 			to,
@@ -93,11 +95,11 @@ where
 		};
 
 		if let Ok(BlockStatus::Unknown) = self.client.status(id) {
-			return Err(Error {
-				code: JSON_RPC_ERROR_DEFAULT.into(),
-				message: String::from("header not found"),
-				data: None,
-			});
+			return Err(JsonRpseeError::Call(CallError::Custom(ErrorObject::owned(
+				JSON_RPC_ERROR_DEFAULT,
+				"header not found".to_string(),
+				None::<()>,
+			))));
 		}
 
 		let api_version =
@@ -283,17 +285,16 @@ where
 		}
 	}
 
-	pub fn estimate_gas(
+	pub async fn estimate_gas(
 		&self,
 		request: CallRequest,
 		_: Option<BlockNumber>,
-	) -> BoxFuture<Result<U256>> {
+	) -> RpcResult<U256> {
 		let client = Arc::clone(&self.client);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 
-		Box::pin(async move {
-			// Define the lower bound of estimate
-			const MIN_GAS_PER_TX: U256 = U256([21_000, 0, 0, 0]);
+		// Define the lower bound of estimate
+		const MIN_GAS_PER_TX: U256 = U256([21_000, 0, 0, 0]);
 
 			// Get best hash (TODO missing support for estimating gas historically)
 			let best_hash = client.info().best_hash;
@@ -402,7 +403,7 @@ where
 			#[rustfmt::skip]
 			let executable = move |
 				request, gas_limit, api_version, api: sp_api::ApiRef<'_, C::Api>, estimate_mode
-			| -> Result<ExecutableResult> {
+			| -> RpcResult<ExecutableResult> {
 				let CallRequest {
 					from,
 					to,
@@ -663,27 +664,26 @@ where
 
 				Ok(highest)
 			}
-		})
 	}
 }
 
-pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> Result<()> {
+pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> RpcResult<()> {
 	match reason {
 		ExitReason::Succeed(_) => Ok(()),
 		ExitReason::Error(e) => {
 			if *e == ExitError::OutOfGas {
 				// `ServerError(0)` will be useful in estimate gas
-				return Err(Error {
-					code: ErrorCode::ServerError(0),
-					message: "out of gas".to_string(),
-					data: None,
-				});
+				return Err(JsonRpseeError::Call(CallError::Custom(ErrorObject::owned(
+					ErrorCode::ServerError(0).code(),
+					"out of gas".to_string(),
+					None::<()>,
+				))));
 			}
-			Err(Error {
-				code: ErrorCode::InternalError,
-				message: format!("evm error: {:?}", e),
-				data: Some(Value::String("0x".to_string())),
-			})
+			Err(JsonRpseeError::Call(CallError::Custom(ErrorObject::owned(
+				ErrorCode::InternalError.code(),
+				format!("evm error: {:?}", e),
+				Some("0x".to_string()),
+			))))
 		}
 		ExitReason::Revert(_) => {
 			let mut message = "VM Exception while processing transaction: revert".to_string();
@@ -698,17 +698,17 @@ pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> Result<()
 					}
 				}
 			}
-			Err(Error {
-				code: ErrorCode::InternalError,
+			Err(JsonRpseeError::Call(CallError::Custom(ErrorObject::owned(
+				ErrorCode::InternalError.code(),
 				message,
-				data: Some(Value::String(hex::encode(data))),
-			})
+				Some(hex::encode(data)),
+			))))
 		}
-		ExitReason::Fatal(e) => Err(Error {
-			code: ErrorCode::InternalError,
-			message: format!("evm fatal: {:?}", e),
-			data: Some(Value::String("0x".to_string())),
-		}),
+		ExitReason::Fatal(e) => Err(JsonRpseeError::Call(CallError::Custom(ErrorObject::owned(
+			ErrorCode::InternalError.code(),
+			format!("evm fatal: {:?}", e),
+			Some("0x".to_string()),
+		)))),
 	}
 }
 
@@ -722,7 +722,7 @@ fn fee_details(
 	request_gas_price: Option<U256>,
 	request_max_fee: Option<U256>,
 	request_priority: Option<U256>,
-) -> Result<FeeDetails> {
+) -> RpcResult<FeeDetails> {
 	match (request_gas_price, request_max_fee, request_priority) {
 		(gas_price, None, None) => {
 			// Legacy request, all default to gas price.
