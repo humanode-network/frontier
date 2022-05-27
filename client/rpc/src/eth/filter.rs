@@ -20,7 +20,7 @@ use std::{collections::BTreeMap, marker::PhantomData, sync::Arc, time};
 
 use ethereum::BlockV2 as EthereumBlock;
 use ethereum_types::{H256, U256};
-use jsonrpc_core::{BoxFuture, Result};
+use jsonrpsee::core::{RpcResult, Error as JsonRpseeError, async_trait};
 
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 use sp_api::ProvideRuntimeApi;
@@ -34,7 +34,7 @@ use sp_runtime::{
 	},
 };
 
-use fc_rpc_core::{types::*, EthFilterApi};
+use fc_rpc_core::{types::*, EthFilterApiServer};
 use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 use fp_storage::EthereumStorageSchema;
 
@@ -76,7 +76,7 @@ where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: HeaderBackend<B> + Send + Sync + 'static,
 {
-	fn create_filter(&self, filter_type: FilterType) -> Result<U256> {
+	fn create_filter(&self, filter_type: FilterType) -> RpcResult<U256> {
 		let block_number =
 			UniqueSaturatedInto::<u64>::unique_saturated_into(self.client.info().best_number);
 		let pool = self.filter_pool.clone();
@@ -109,7 +109,8 @@ where
 	}
 }
 
-impl<B, C, BE> EthFilterApi for EthFilter<B, C, BE>
+#[async_trait]
+impl<B, C, BE> EthFilterApiServer for EthFilter<B, C, BE>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
@@ -118,19 +119,19 @@ where
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 {
-	fn new_filter(&self, filter: Filter) -> Result<U256> {
+	fn new_filter(&self, filter: Filter) -> RpcResult<U256> {
 		self.create_filter(FilterType::Log(filter))
 	}
 
-	fn new_block_filter(&self) -> Result<U256> {
+	fn new_block_filter(&self) -> RpcResult<U256> {
 		self.create_filter(FilterType::Block)
 	}
 
-	fn new_pending_transaction_filter(&self) -> Result<U256> {
+	fn new_pending_transaction_filter(&self) -> RpcResult<U256> {
 		Err(internal_err("Method not available."))
 	}
 
-	fn filter_changes(&self, index: Index) -> BoxFuture<Result<FilterChanges>> {
+	async fn filter_changes(&self, index: Index) -> RpcResult<FilterChanges> {
 		// There are multiple branches that needs to return async blocks.
 		// Also, each branch need to (synchronously) do stuff with the pool
 		// (behind a lock), and the lock should be released before entering
@@ -149,7 +150,7 @@ where
 				from_number: NumberFor<B>,
 				current_number: NumberFor<B>,
 			},
-			Error(jsonrpc_core::Error),
+			Error(JsonRpseeError),
 		}
 
 		let key = U256::from(index.value());
@@ -238,8 +239,7 @@ where
 		let backend = Arc::clone(&self.backend);
 		let max_past_logs = self.max_past_logs;
 
-		Box::pin(async move {
-			match path {
+		match path {
 				FuturePath::Error(err) => Err(err),
 				FuturePath::Block { last, next } => {
 					let mut ethereum_hashes: Vec<H256> = Vec::new();
@@ -283,16 +283,15 @@ where
 					Ok(FilterChanges::Logs(ret))
 				}
 			}
-		})
 	}
 
-	fn filter_logs(&self, index: Index) -> BoxFuture<Result<Vec<Log>>> {
+	async fn filter_logs(&self, index: Index) -> RpcResult<Vec<Log>> {
 		let key = U256::from(index.value());
 		let pool = self.filter_pool.clone();
 
 		// We want to get the filter, while releasing the pool lock outside
 		// of the async block.
-		let filter_result: Result<Filter> = (|| {
+		let filter_result: RpcResult<Filter> = (|| {
 			let pool = pool
 				.lock()
 				.map_err(|_| internal_err("Filter pool is not available."))?;
@@ -315,8 +314,7 @@ where
 		let backend = Arc::clone(&self.backend);
 		let max_past_logs = self.max_past_logs;
 
-		Box::pin(async move {
-			let filter = filter_result?;
+		let filter = filter_result?;
 
 			let best_number = client.info().best_number;
 			let mut current_number = filter
@@ -352,10 +350,9 @@ where
 			)
 			.await?;
 			Ok(ret)
-		})
 	}
 
-	fn uninstall_filter(&self, index: Index) -> Result<bool> {
+	fn uninstall_filter(&self, index: Index) -> RpcResult<bool> {
 		let key = U256::from(index.value());
 		let pool = self.filter_pool.clone();
 		// Try to lock.
@@ -371,14 +368,13 @@ where
 		response
 	}
 
-	fn logs(&self, filter: Filter) -> BoxFuture<Result<Vec<Log>>> {
+	async fn logs(&self, filter: Filter) -> RpcResult<Vec<Log>> {
 		let client = Arc::clone(&self.client);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
 		let max_past_logs = self.max_past_logs;
 
-		Box::pin(async move {
-			let mut ret: Vec<Log> = Vec::new();
+		let mut ret: Vec<Log> = Vec::new();
 			if let Some(hash) = filter.block_hash {
 				let id = match frontier_backend_client::load_hash::<B>(backend.as_ref(), hash)
 					.map_err(|err| internal_err(format!("{:?}", err)))?
@@ -433,7 +429,6 @@ where
 				.await?;
 			}
 			Ok(ret)
-		})
 	}
 }
 
@@ -446,7 +441,7 @@ async fn filter_range_logs<B: BlockT, C, BE>(
 	filter: &Filter,
 	from: NumberFor<B>,
 	to: NumberFor<B>,
-) -> Result<()>
+) -> RpcResult<()>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,

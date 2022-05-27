@@ -19,13 +19,13 @@
 use std::{marker::PhantomData, sync::Arc};
 
 use ethereum_types::H256;
-use jsonrpc_core::Result;
+use jsonrpsee::core::RpcResult;
 use sp_api::{Core, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_core::keccak_256;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 
-use fc_rpc_core::{types::Bytes, Web3Api};
+use fc_rpc_core::{types::Bytes, Web3ApiServer};
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::internal_err;
@@ -45,13 +45,13 @@ impl<B, C> Web3<B, C> {
 	}
 }
 
-impl<B, C> Web3Api for Web3<B, C>
+impl<B, C> Web3ApiServer for Web3<B, C>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: HeaderBackend<B> + ProvideRuntimeApi<B> + Send + Sync + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
 {
-	fn client_version(&self) -> Result<String> {
+	fn client_version(&self) -> RpcResult<String> {
 		let hash = self.client.info().best_hash;
 		let version = self
 			.client
@@ -68,7 +68,7 @@ where
 		))
 	}
 
-	fn sha3(&self, input: Bytes) -> Result<H256> {
+	fn sha3(&self, input: Bytes) -> RpcResult<H256> {
 		Ok(H256::from(keccak_256(&input.into_vec())))
 	}
 }

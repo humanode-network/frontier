@@ -44,14 +44,18 @@ pub use self::{
 	web3::Web3,
 };
 pub use ethereum::TransactionV2 as EthereumTransaction;
-pub use fc_rpc_core::{EthApi, EthFilterApi, EthPubSubApi, NetApi, Web3Api};
+pub use fc_rpc_core::{EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer, Web3ApiServer};
+use jsonrpsee::{
+	core::Error as JsonRpseeError,
+	types::error::{CallError, ErrorCode, ErrorObject},
+};
 
 pub mod frontier_backend_client {
 	use super::internal_err;
 
 	use codec::Decode;
 	use ethereum_types::H256;
-	use jsonrpc_core::Result as RpcResult;
+	use jsonrpsee::core::RpcResult;
 
 	use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 	use sp_blockchain::HeaderBackend;
@@ -192,12 +196,12 @@ pub mod frontier_backend_client {
 	}
 }
 
-pub fn internal_err<T: ToString>(message: T) -> jsonrpc_core::Error {
-	jsonrpc_core::Error {
-		code: jsonrpc_core::ErrorCode::InternalError,
-		message: message.to_string(),
-		data: None,
-	}
+pub fn internal_err<T: ToString>(message: T) -> JsonRpseeError {
+	JsonRpseeError::Call(CallError::Custom(ErrorObject::owned(
+		ErrorCode::InternalError.code(),
+		message.to_string(),
+		None::<()>,
+	)))
 }
 
 pub fn public_key(transaction: &EthereumTransaction) -> Result<[u8; 64], sp_io::EcdsaVerifyError> {
