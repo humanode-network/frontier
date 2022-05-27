@@ -220,11 +220,11 @@ pub trait EthApi<Hash> {
 	/// Sends transaction; will block waiting for signer to return the
 	/// transaction hash.
 	#[method(name = "eth_sendTransaction")]
-	async fn send_transaction(&self, request: TransactionRequest) -> RpcResult<Hash>;
+	async fn send_transaction(&self, request: TransactionRequest) -> RpcResult<H256>;
 
 	/// Sends signed transaction, returning its hash.
 	#[method(name = "eth_sendRawTransaction")]
-	async fn send_raw_transaction(&self, bytes: Bytes) -> RpcResult<Hash>;
+	async fn send_raw_transaction(&self, bytes: Bytes) -> RpcResult<H256>;
 }
 
 /// Eth filters rpc api (polling).

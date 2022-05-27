@@ -308,11 +308,11 @@ where
 	// Submit
 	// ########################################################################
 
-	async fn send_transaction(&self, request: TransactionRequest) -> RpcResult<TxHash<P>> {
+	async fn send_transaction(&self, request: TransactionRequest) -> RpcResult<H256> {
 		self.send_transaction(request).await
 	}
 
-	async fn send_raw_transaction(&self, bytes: Bytes) -> RpcResult<TxHash<P>> {
+	async fn send_raw_transaction(&self, bytes: Bytes) -> RpcResult<H256> {
 		self.send_raw_transaction(bytes).await
 	}
 }

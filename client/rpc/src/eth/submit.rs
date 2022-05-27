@@ -22,7 +22,7 @@ use jsonrpsee::core::RpcResult;
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 use sc_network::ExHashT;
 use sc_transaction_pool::ChainApi;
-use sc_transaction_pool_api::{TransactionPool, TxHash};
+use sc_transaction_pool_api::TransactionPool;
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
@@ -49,7 +49,7 @@ where
 	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
 	A: ChainApi<Block = B> + 'static,
 {
-	pub async fn send_transaction(&self, request: TransactionRequest) -> RpcResult<TxHash<P>> {
+	pub async fn send_transaction(&self, request: TransactionRequest) -> RpcResult<H256> {
 		let from = match request.from {
 			Some(from) => from,
 			None => {
@@ -145,7 +145,7 @@ where
 			Some(transaction) => transaction,
 			None => return Err(internal_err("no signer available")),
 		};
-		let _transaction_hash = transaction.hash();
+		let transaction_hash = transaction.hash();
 
 		let block_hash = BlockId::hash(self.client.info().best_hash);
 		let api_version = match self
@@ -207,10 +207,12 @@ where
 			.await
 			.map_err(|err| {
 				internal_err(format!("submit transaction to pool failed: {:?}", err))
-			})
+			})?;
+
+		Ok(transaction_hash)
 	}
 
-	pub async fn send_raw_transaction(&self, bytes: Bytes) -> RpcResult<TxHash<P>> {
+	pub async fn send_raw_transaction(&self, bytes: Bytes) -> RpcResult<H256> {
 		let slice = &bytes.0[..];
 		if slice.is_empty() {
 			return Err(internal_err("transaction data is empty"));
@@ -235,7 +237,7 @@ where
 			}
 		};
 
-		let _transaction_hash = transaction.hash();
+		let transaction_hash = transaction.hash();
 
 		let block_hash = BlockId::hash(self.client.info().best_hash);
 		let api_version = match self
@@ -297,6 +299,8 @@ where
 			.await
 			.map_err(|err| {
 				internal_err(format!("submit transaction to pool failed: {:?}", err))
-			})
+			})?;
+
+		Ok(transaction_hash)
 	}
 }
