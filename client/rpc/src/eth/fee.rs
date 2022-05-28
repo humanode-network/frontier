@@ -17,7 +17,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use ethereum_types::{H256, U256};
-use jsonrpc_core::Result;
+use jsonrpsee::core::RpcResult;
 
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 use sc_network::ExHashT;
@@ -43,7 +43,7 @@ where
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 {
-	pub fn gas_price(&self) -> Result<U256> {
+	pub fn gas_price(&self) -> RpcResult<U256> {
 		let block = BlockId::Hash(self.client.info().best_hash);
 
 		self.client
@@ -57,7 +57,7 @@ where
 		block_count: U256,
 		newest_block: BlockNumber,
 		reward_percentiles: Option<Vec<f64>>,
-	) -> Result<FeeHistory> {
+	) -> RpcResult<FeeHistory> {
 		// The max supported range size is 1024 by spec.
 		let range_limit = U256::from(1024);
 		let block_count = if block_count > range_limit {
@@ -189,7 +189,7 @@ where
 		)))
 	}
 
-	pub fn max_priority_fee_per_gas(&self) -> Result<U256> {
+	pub fn max_priority_fee_per_gas(&self) -> RpcResult<U256> {
 		// https://github.com/ethereum/go-ethereum/blob/master/eth/ethconfig/config.go#L44-L51
 		let at_percentile = 60;
 		let block_count = 20;

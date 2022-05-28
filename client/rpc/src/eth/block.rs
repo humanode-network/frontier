@@ -19,7 +19,7 @@
 use std::sync::Arc;
 
 use ethereum_types::{H256, U256};
-use jsonrpc_core::{BoxFuture, Result};
+use jsonrpsee::core::RpcResult;
 
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 use sc_network::ExHashT;
@@ -42,62 +42,59 @@ where
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 {
-	pub fn block_by_hash(&self, hash: H256, full: bool) -> BoxFuture<Result<Option<RichBlock>>> {
+	pub async fn block_by_hash(&self, hash: H256, full: bool) -> RpcResult<Option<RichBlock>> {
 		let client = Arc::clone(&self.client);
 		let overrides = Arc::clone(&self.overrides);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
 
-		Box::pin(async move {
-			let id = match frontier_backend_client::load_hash::<B>(backend.as_ref(), hash)
-				.map_err(|err| internal_err(format!("{:?}", err)))?
+		let id = match frontier_backend_client::load_hash::<B>(backend.as_ref(), hash)
+			.map_err(|err| internal_err(format!("{:?}", err)))?
 			{
 				Some(hash) => hash,
 				_ => return Ok(None),
 			};
-			let substrate_hash = client
-				.expect_block_hash_from_id(&id)
-				.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+		let substrate_hash = client
+			.expect_block_hash_from_id(&id)
+			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
-			let schema =
-				frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
-			let handler = overrides
-				.schemas
-				.get(&schema)
-				.unwrap_or(&overrides.fallback);
+		let schema =
+			frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+		let handler = overrides
+			.schemas
+			.get(&schema)
+			.unwrap_or(&overrides.fallback);
 
-			let block = block_data_cache.current_block(schema, substrate_hash).await;
-			let statuses = block_data_cache
-				.current_transaction_statuses(schema, substrate_hash)
-				.await;
+		let block = block_data_cache.current_block(schema, substrate_hash).await;
+		let statuses = block_data_cache
+			.current_transaction_statuses(schema, substrate_hash)
+			.await;
 
-			let base_fee = handler.base_fee(&id);
+		let base_fee = handler.base_fee(&id);
 
-			match (block, statuses) {
-				(Some(block), Some(statuses)) => Ok(Some(rich_block_build(
-					block,
-					statuses.into_iter().map(Option::Some).collect(),
-					Some(hash),
-					full,
-					base_fee,
-				))),
-				_ => Ok(None),
-			}
-		})
+		match (block, statuses) {
+			(Some(block), Some(statuses)) => Ok(Some(rich_block_build(
+				block,
+				statuses.into_iter().map(Option::Some).collect(),
+				Some(hash),
+				full,
+				base_fee,
+			))),
+			_ => Ok(None),
+		}
 	}
 
-	pub fn block_by_number(
+	pub async fn block_by_number(
 		&self,
 		number: BlockNumber,
 		full: bool,
-	) -> BoxFuture<Result<Option<RichBlock>>> {
+	) -> RpcResult<Option<RichBlock>> {
 		let client = Arc::clone(&self.client);
 		let overrides = Arc::clone(&self.overrides);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
 
-		Box::pin(async move {
-			let id = match frontier_backend_client::native_block_id::<B, C>(
+		let id = match frontier_backend_client::native_block_id::<B, C>(
 				client.as_ref(),
 				backend.as_ref(),
 				Some(number),
@@ -105,42 +102,41 @@ where
 				Some(id) => id,
 				None => return Ok(None),
 			};
-			let substrate_hash = client
-				.expect_block_hash_from_id(&id)
-				.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+		let substrate_hash = client
+			.expect_block_hash_from_id(&id)
+			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
-			let schema =
-				frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
-			let handler = overrides
-				.schemas
-				.get(&schema)
-				.unwrap_or(&overrides.fallback);
+		let schema =
+			frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+		let handler = overrides
+			.schemas
+			.get(&schema)
+			.unwrap_or(&overrides.fallback);
 
-			let block = block_data_cache.current_block(schema, substrate_hash).await;
-			let statuses = block_data_cache
-				.current_transaction_statuses(schema, substrate_hash)
-				.await;
+		let block = block_data_cache.current_block(schema, substrate_hash).await;
+		let statuses = block_data_cache
+			.current_transaction_statuses(schema, substrate_hash)
+			.await;
 
-			let base_fee = handler.base_fee(&id);
+		let base_fee = handler.base_fee(&id);
 
-			match (block, statuses) {
-				(Some(block), Some(statuses)) => {
-					let hash = H256::from(keccak_256(&rlp::encode(&block.header)));
+		match (block, statuses) {
+			(Some(block), Some(statuses)) => {
+				let hash = H256::from(keccak_256(&rlp::encode(&block.header)));
 
-					Ok(Some(rich_block_build(
-						block,
-						statuses.into_iter().map(Option::Some).collect(),
-						Some(hash),
-						full,
-						base_fee,
-					)))
-				}
-				_ => Ok(None),
+				Ok(Some(rich_block_build(
+					block,
+					statuses.into_iter().map(Option::Some).collect(),
+					Some(hash),
+					full,
+					base_fee,
+				)))
 			}
-		})
+			_ => Ok(None),
+		}
 	}
 
-	pub fn block_transaction_count_by_hash(&self, hash: H256) -> Result<Option<U256>> {
+	pub fn block_transaction_count_by_hash(&self, hash: H256) -> RpcResult<Option<U256>> {
 		let id = match frontier_backend_client::load_hash::<B>(self.backend.as_ref(), hash)
 			.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
@@ -162,7 +158,7 @@ where
 		}
 	}
 
-	pub fn block_transaction_count_by_number(&self, number: BlockNumber) -> Result<Option<U256>> {
+	pub fn block_transaction_count_by_number(&self, number: BlockNumber) -> RpcResult<Option<U256>> {
 		if let BlockNumber::Pending = number {
 			// get the pending transactions count
 			return Ok(Some(U256::from(
@@ -193,15 +189,15 @@ where
 		}
 	}
 
-	pub fn block_uncles_count_by_hash(&self, _: H256) -> Result<U256> {
+	pub fn block_uncles_count_by_hash(&self, _: H256) -> RpcResult<U256> {
 		Ok(U256::zero())
 	}
 
-	pub fn block_uncles_count_by_number(&self, _: BlockNumber) -> Result<U256> {
+	pub fn block_uncles_count_by_number(&self, _: BlockNumber) -> RpcResult<U256> {
 		Ok(U256::zero())
 	}
 
-	pub fn uncle_by_block_hash_and_index(&self, _: H256, _: Index) -> Result<Option<RichBlock>> {
+	pub fn uncle_by_block_hash_and_index(&self, _: H256, _: Index) -> RpcResult<Option<RichBlock>> {
 		Ok(None)
 	}
 
@@ -209,7 +205,7 @@ where
 		&self,
 		_: BlockNumber,
 		_: Index,
-	) -> Result<Option<RichBlock>> {
+	) -> RpcResult<Option<RichBlock>> {
 		Ok(None)
 	}
 }

@@ -19,13 +19,13 @@
 use std::sync::Arc;
 
 use ethereum_types::H256;
-use jsonrpc_core::Result;
+use jsonrpsee::core::RpcResult;
 use sc_network::{ExHashT, NetworkService};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 
-use fc_rpc_core::{types::PeerCount, NetApi};
+use fc_rpc_core::{types::PeerCount, NetApiServer};
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::internal_err;
@@ -51,13 +51,13 @@ impl<B: BlockT, C, H: ExHashT> Net<B, C, H> {
 	}
 }
 
-impl<B, C, H: ExHashT> NetApi for Net<B, C, H>
+impl<B, C, H: ExHashT> NetApiServer for Net<B, C, H>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: HeaderBackend<B> + ProvideRuntimeApi<B> + Send + Sync + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
 {
-	fn version(&self) -> Result<String> {
+	fn version(&self) -> RpcResult<String> {
 		let hash = self.client.info().best_hash;
 		Ok(self
 			.client
@@ -67,7 +67,7 @@ where
 			.to_string())
 	}
 
-	fn peer_count(&self) -> Result<PeerCount> {
+	fn peer_count(&self) -> RpcResult<PeerCount> {
 		let peer_count = self.network.num_connected();
 		Ok(match self.peer_count_as_hex {
 			true => PeerCount::String(format!("0x{:x}", peer_count)),
@@ -75,7 +75,7 @@ where
 		})
 	}
 
-	fn is_listening(&self) -> Result<bool> {
+	fn is_listening(&self) -> RpcResult<bool> {
 		Ok(true)
 	}
 }

@@ -20,7 +20,7 @@ use std::sync::Arc;
 
 use ethereum::TransactionV2 as EthereumTransaction;
 use ethereum_types::{H256, U256, U64};
-use jsonrpc_core::{BoxFuture, Result};
+use jsonrpsee::core::RpcResult;
 
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 use sc_network::ExHashT;
@@ -51,15 +51,14 @@ where
 	BE::State: StateBackend<BlakeTwo256>,
 	A: ChainApi<Block = B> + 'static,
 {
-	pub fn transaction_by_hash(&self, hash: H256) -> BoxFuture<Result<Option<Transaction>>> {
+	pub async fn transaction_by_hash(&self, hash: H256) -> RpcResult<Option<Transaction>> {
 		let client = Arc::clone(&self.client);
 		let overrides = Arc::clone(&self.overrides);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
 		let graph = Arc::clone(&self.graph);
 
-		Box::pin(async move {
-			let (hash, index) = match frontier_backend_client::load_transactions::<B, C>(
+		let (hash, index) = match frontier_backend_client::load_transactions::<B, C>(
 				client.as_ref(),
 				backend.as_ref(),
 				hash,
@@ -164,21 +163,19 @@ where
 				))),
 				_ => Ok(None),
 			}
-		})
 	}
 
-	pub fn transaction_by_block_hash_and_index(
+	pub async fn transaction_by_block_hash_and_index(
 		&self,
 		hash: H256,
 		index: Index,
-	) -> BoxFuture<Result<Option<Transaction>>> {
+	) -> RpcResult<Option<Transaction>> {
 		let client = Arc::clone(&self.client);
 		let overrides = Arc::clone(&self.overrides);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
 
-		Box::pin(async move {
-			let id = match frontier_backend_client::load_hash::<B>(backend.as_ref(), hash)
+		let id = match frontier_backend_client::load_hash::<B>(backend.as_ref(), hash)
 				.map_err(|err| internal_err(format!("{:?}", err)))?
 			{
 				Some(hash) => hash,
@@ -221,21 +218,19 @@ where
 				}
 				_ => Ok(None),
 			}
-		})
 	}
 
-	pub fn transaction_by_block_number_and_index(
+	pub async fn transaction_by_block_number_and_index(
 		&self,
 		number: BlockNumber,
 		index: Index,
-	) -> BoxFuture<Result<Option<Transaction>>> {
+	) -> RpcResult<Option<Transaction>> {
 		let client = Arc::clone(&self.client);
 		let overrides = Arc::clone(&self.overrides);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
 
-		Box::pin(async move {
-			let id = match frontier_backend_client::native_block_id::<B, C>(
+		let id = match frontier_backend_client::native_block_id::<B, C>(
 				client.as_ref(),
 				backend.as_ref(),
 				Some(number),
@@ -279,17 +274,15 @@ where
 				}
 				_ => Ok(None),
 			}
-		})
 	}
 
-	pub fn transaction_receipt(&self, hash: H256) -> BoxFuture<Result<Option<Receipt>>> {
+	pub async fn transaction_receipt(&self, hash: H256) -> RpcResult<Option<Receipt>> {
 		let client = Arc::clone(&self.client);
 		let overrides = Arc::clone(&self.overrides);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
 
-		Box::pin(async move {
-			let (hash, index) = match frontier_backend_client::load_transactions::<B, C>(
+		let (hash, index) = match frontier_backend_client::load_transactions::<B, C>(
 				client.as_ref(),
 				backend.as_ref(),
 				hash,
@@ -347,7 +340,7 @@ where
 												hash
 											))),
 										})
-										.sum::<Result<u32>>()?;
+										.sum::<RpcResult<u32>>()?;
 									(
 										d.logs,
 										d.logs_bloom,
@@ -458,6 +451,5 @@ where
 				}
 				_ => Ok(None),
 			}
-		})
 	}
 }
