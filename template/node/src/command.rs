@@ -200,7 +200,7 @@ pub fn run() -> sc_cli::Result<()> {
 							Arc::new(ext_builder),
 						)
 					}
-					BenchmarkCmd::Machine(cmd) => cmd.run(&config),
+					_ => { Err("Currently we don't support the rest BenchmarkCmd subcommands.".into())},
 				}
 			})
 		}
