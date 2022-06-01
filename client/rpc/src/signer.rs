@@ -18,7 +18,7 @@
 
 use ethereum::TransactionV2 as EthereumTransaction;
 use ethereum_types::{H160, H256};
-use jsonrpc_core::Error;
+use jsonrpsee::core::Error as JsonRpseeError;
 
 use fc_rpc_core::types::TransactionMessage;
 use sp_core::hashing::keccak_256;
@@ -34,7 +34,7 @@ pub trait EthSigner: Send + Sync {
 		&self,
 		message: TransactionMessage,
 		address: &H160,
-	) -> Result<EthereumTransaction, Error>;
+	) -> Result<EthereumTransaction, JsonRpseeError>;
 }
 
 pub struct EthDevSigner {
@@ -74,7 +74,7 @@ impl EthSigner for EthDevSigner {
 		&self,
 		message: TransactionMessage,
 		address: &H160,
-	) -> Result<EthereumTransaction, Error> {
+	) -> Result<EthereumTransaction, JsonRpseeError> {
 		let mut transaction = None;
 
 		for secret in &self.keys {
