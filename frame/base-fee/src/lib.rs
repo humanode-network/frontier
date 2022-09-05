@@ -124,7 +124,7 @@ pub mod pallet {
 			// 	- One storage read to get the Elasticity.
 			// 	- One write to BaseFeePerGas.
 			let db_weight = <T as frame_system::Config>::DbWeight::get();
-			db_weight.reads(2).saturating_add(db_weight.write)
+			db_weight.reads(2).saturating_add(Weight::from_ref_time(db_weight.write))
 		}
 
 		fn on_finalize(_n: <T as frame_system::Config>::BlockNumber) {
@@ -146,7 +146,7 @@ pub mod pallet {
 
 			// We convert `weight` into block fullness and ensure we are within the lower and upper bound.
 			let weight_used =
-				Permill::from_rational(weight.total(), max_weight).clamp(lower, upper);
+				Permill::from_rational(weight.total().ref_time(), max_weight.ref_time()).clamp(lower, upper);
 			// After clamp `weighted_used` is always between `lower` and `upper`.
 			// We scale the block fullness range to the lower/upper range, and the usage represents the
 			// actual percentage within this new scale.
@@ -192,7 +192,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
 		pub fn set_base_fee_per_gas(origin: OriginFor<T>, fee: U256) -> DispatchResult {
 			ensure_root(origin)?;
 			let _ = Self::set_base_fee_per_gas_inner(fee);
@@ -200,7 +200,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
 		pub fn set_elasticity(origin: OriginFor<T>, elasticity: Permill) -> DispatchResult {
 			ensure_root(origin)?;
 			let _ = Self::set_elasticity_inner(elasticity);
@@ -219,10 +219,10 @@ impl<T: Config> fp_evm::FeeCalculator for Pallet<T> {
 impl<T: Config> Pallet<T> {
 	pub fn set_base_fee_per_gas_inner(value: U256) -> Weight {
 		<BaseFeePerGas<T>>::put(value);
-		T::DbWeight::get().write
+		Weight::from_ref_time(T::DbWeight::get().write)
 	}
 	pub fn set_elasticity_inner(value: Permill) -> Weight {
 		<Elasticity<T>>::put(value);
-		T::DbWeight::get().write
+		Weight::from_ref_time(T::DbWeight::get().write)
 	}
 }

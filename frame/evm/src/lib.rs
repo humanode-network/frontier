@@ -624,10 +624,10 @@ pub trait GasWeightMapping {
 
 impl GasWeightMapping for () {
 	fn gas_to_weight(gas: u64) -> Weight {
-		gas as Weight
+		Weight::from_ref_time(gas)
 	}
 	fn weight_to_gas(weight: Weight) -> u64 {
-		weight as u64
+		weight.ref_time()
 	}
 }
 
