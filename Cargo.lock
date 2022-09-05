@@ -1717,6 +1717,7 @@ dependencies = [
  "sc-client-api",
  "sc-client-db",
  "sc-network",
+ "sc-network-common",
  "sc-rpc",
  "sc-service",
  "sc-transaction-pool",

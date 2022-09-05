@@ -27,7 +27,7 @@ use sc_client_api::{
 	backend::{Backend, StateBackend, StorageProvider},
 	client::BlockchainEvents,
 };
-use sc_network::{ExHashT, NetworkService};
+use sc_network::{ExHashT, NetworkService, NetworkStatusProvider};
 use sc_rpc::SubscriptionTaskExecutor;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::{ApiExt, BlockId, ProvideRuntimeApi};
