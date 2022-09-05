@@ -194,7 +194,7 @@ pub fn run() -> sc_cli::Result<()> {
 					}
 					BenchmarkCmd::Overhead(cmd) => {
 						let ext_builder = RemarkBuilder::new(client.clone());
-						cmd.run(config, client, inherent_benchmark_data()?, &ext_builder)
+						cmd.run(config, client, inherent_benchmark_data()?, Vec::new(), &ext_builder)
 					}
 					BenchmarkCmd::Extrinsic(cmd) => {
 						// Register the *Remark* and *TKA* builders.
@@ -206,7 +206,7 @@ pub fn run() -> sc_cli::Result<()> {
 								ExistentialDeposit::get(),
 							)),
 						]);
-						cmd.run(client, inherent_benchmark_data()?, &ext_factory)
+						cmd.run(client, inherent_benchmark_data()?, Vec::new(), &ext_factory)
 					}
 					BenchmarkCmd::Machine(cmd) => cmd.run(
 						&config,
