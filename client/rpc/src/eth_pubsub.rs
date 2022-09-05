@@ -34,6 +34,7 @@ use sp_api::{ApiExt, BlockId, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto};
+use sp_consensus::SyncOracle;
 
 use fc_rpc_core::{
 	types::{
