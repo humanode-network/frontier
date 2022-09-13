@@ -128,7 +128,7 @@ pub mod pallet {
 		type Currency: Currency<Self::AccountId> + Inspect<Self::AccountId>;
 
 		/// The overarching event type.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Precompiles associated with this EVM engine.
 		type PrecompilesType: PrecompileSet;
 		type PrecompilesValue: Get<Self::PrecompilesType>;

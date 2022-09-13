@@ -48,8 +48,8 @@ pub struct Dispatch<T, DecodeLimit = ConstU32<8>> {
 impl<T, DecodeLimit> Precompile for Dispatch<T, DecodeLimit>
 where
 	T: pallet_evm::Config,
-	T::Call: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo + Decode,
-	<T::Call as Dispatchable>::Origin: From<Option<T::AccountId>>,
+	T::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo + Decode,
+	<T::RuntimeCall as Dispatchable>::Origin: From<Option<T::AccountId>>,
 	DecodeLimit: Get<u32>,
 {
 	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
@@ -58,7 +58,7 @@ where
 		let context = handle.context();
 
 		let call =
-			T::Call::decode_with_depth_limit(DecodeLimit::get(), &mut &*input).map_err(|_| {
+			T::RuntimeCall::decode_with_depth_limit(DecodeLimit::get(), &mut &*input).map_err(|_| {
 				PrecompileFailure::Error {
 					exit_status: ExitError::Other("decode failed".into()),
 				}

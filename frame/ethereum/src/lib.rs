@@ -100,7 +100,7 @@ impl<T> Call<T>
 where
 	OriginFor<T>: Into<Result<RawOrigin, OriginFor<T>>>,
 	T: Send + Sync + Config,
-	T::Call: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+	T::RuntimeCall: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 {
 	pub fn is_self_contained(&self) -> bool {
 		matches!(self, Call::transact { .. })
@@ -125,7 +125,7 @@ where
 	pub fn pre_dispatch_self_contained(
 		&self,
 		origin: &H160,
-		dispatch_info: &DispatchInfoOf<T::Call>,
+		dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
 		len: usize,
 	) -> Option<Result<(), TransactionValidityError>> {
 		if let Call::transact { transaction } = self {
@@ -145,7 +145,7 @@ where
 	pub fn validate_self_contained(
 		&self,
 		origin: &H160,
-		dispatch_info: &DispatchInfoOf<T::Call>,
+		dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
 		len: usize,
 	) -> Option<TransactionValidity> {
 		if let Call::transact { transaction } = self {
@@ -182,7 +182,7 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_timestamp::Config + pallet_evm::Config {
 		/// The overarching event type.
-		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// How Ethereum state root is calculated.
 		type StateRoot: Get<H256>;
 	}
