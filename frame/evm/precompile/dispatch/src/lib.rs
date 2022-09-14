@@ -32,9 +32,8 @@ use fp_evm::{
 };
 use frame_support::{
 	codec::{Decode, DecodeLimit as _},
-	dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
+	dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo, DispatchClass, Pays},
 	traits::{ConstU32, Get},
-	weights::{DispatchClass, Pays},
 };
 use pallet_evm::{AddressMapping, GasWeightMapping};
 

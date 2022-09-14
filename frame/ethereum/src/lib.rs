@@ -41,10 +41,10 @@ use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 use frame_support::traits::OnRuntimeUpgradeHelpersExt;
 use frame_support::{
 	codec::{Decode, Encode, MaxEncodedLen},
-	dispatch::DispatchResultWithPostInfo,
+	dispatch::{DispatchResultWithPostInfo, DispatchInfo, Pays, PostDispatchInfo},
 	scale_info::TypeInfo,
 	traits::{EnsureOrigin, Get, PalletInfoAccess},
-	weights::{DispatchInfo, Pays, PostDispatchInfo, Weight},
+	weights::Weight,
 };
 use frame_system::{pallet_prelude::OriginFor, CheckWeight, WeightInfo};
 use pallet_evm::{BlockHashMapping, FeeCalculator, GasWeightMapping, Runner};

@@ -64,12 +64,12 @@ pub mod runner;
 mod tests;
 
 use frame_support::{
-	dispatch::DispatchResultWithPostInfo,
+	dispatch::{Pays, PostDispatchInfo, DispatchResultWithPostInfo},
 	traits::{
 		tokens::fungible::Inspect, Currency, ExistenceRequirement, FindAuthor, Get, Imbalance,
 		OnUnbalanced, SignedImbalance, WithdrawReasons,
 	},
-	weights::{Pays, PostDispatchInfo, Weight},
+	weights::Weight,
 };
 use frame_system::RawOrigin;
 use sp_core::{Hasher, H160, H256, U256};
