@@ -19,11 +19,11 @@ serde_json = "1.0"
 ethereum-types = "0.13.1"
 
 # Substrate
-sc-cli = { git = "https://github.com/humanode-network/substrate", branch = "master", features = ["wasmtime"] }
-sc-service = { git = "https://github.com/humanode-network/substrate", branch = "master", features = ["wasmtime"] }
-sp-api = { git = "https://github.com/humanode-network/substrate", branch = "master" }
-sp-blockchain = { git = "https://github.com/humanode-network/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/humanode-network/substrate", branch = "master" }
+sc-cli = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21", features = ["wasmtime"] }
+sc-service = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21", features = ["wasmtime"] }
+sp-api = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
+sp-blockchain = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
+sp-runtime = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
 
 # Frontier
 fc-db = { path = "../db" }
@@ -36,10 +36,10 @@ tempfile = "3.3.0"
 # Parity
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 # Substrate
-sc-block-builder = { git = "https://github.com/humanode-network/substrate", branch = "master" }
-sc-client-db = { git = "https://github.com/humanode-network/substrate", branch = "master" }
-sp-consensus = { git = "https://github.com/humanode-network/substrate", branch = "master" }
-sp-io = { git = "https://github.com/humanode-network/substrate", branch = "master" }
-substrate-test-runtime-client = { git = "https://github.com/humanode-network/substrate", branch = "master" }
+sc-block-builder = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
+sc-client-db = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
+sp-consensus = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
+sp-io = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
+substrate-test-runtime-client = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
 # Frontier
 frontier-template-runtime = { path = "../../template/runtime" }

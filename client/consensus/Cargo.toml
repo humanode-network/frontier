@@ -15,13 +15,13 @@ async-trait = "0.1"
 thiserror = "1.0"
 
 # Substrate
-sc-client-api = { git = "https://github.com/humanode-network/substrate", branch = "master" }
-sc-consensus = { git = "https://github.com/humanode-network/substrate", branch = "master" }
-sp-api = { git = "https://github.com/humanode-network/substrate", branch = "master" }
-sp-block-builder = { git = "https://github.com/humanode-network/substrate", branch = "master" }
-sp-blockchain = { git = "https://github.com/humanode-network/substrate", branch = "master" }
-sp-consensus = { git = "https://github.com/humanode-network/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/humanode-network/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
+sc-consensus = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
+sp-api = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
+sp-block-builder = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
+sp-blockchain = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
+sp-consensus = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
+sp-runtime = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
 
 # Frontier
 fc-db = { version = "2.0.0-dev", path = "../db" }
