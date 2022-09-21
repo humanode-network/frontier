@@ -160,7 +160,6 @@ pub fn new_partial(
 
 	#[cfg(feature = "aura")]
 	{
-		use sc_client_api::ExecutorProvider;
 		use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
 
 		let (grandpa_block_import, grandpa_link) = sc_finality_grandpa::block_import(
@@ -188,16 +187,13 @@ pub fn new_partial(
 			Ok((timestamp, slot, dynamic_fee))
 		};
 
-		let import_queue = sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _, _>(
+		let import_queue = sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _>(
 			sc_consensus_aura::ImportQueueParams {
 				block_import: frontier_block_import.clone(),
 				justification_import: Some(Box::new(grandpa_block_import)),
 				client: client.clone(),
 				create_inherent_data_providers,
 				spawner: &task_manager.spawn_essential_handle(),
-				can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(
-					client.executor().clone(),
-				),
 				registry: config.prometheus_registry(),
 				check_for_equivocation: Default::default(),
 				telemetry: telemetry.as_ref().map(|x| x.handle()),
@@ -264,7 +260,7 @@ fn remote_keystore(_url: &str) -> Result<Arc<LocalKeystore>, &'static str> {
 /// Builds a new service for a full client.
 #[cfg(feature = "aura")]
 pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, ServiceError> {
-	use sc_client_api::{BlockBackend, ExecutorProvider};
+	use sc_client_api::BlockBackend;
 	use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
 
 	// Use ethereum style for subscription ids
@@ -436,7 +432,7 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 			Ok((timestamp, slot, dynamic_fee))
 		};
 
-		let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _, _, _>(
+		let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _, _>(
 			sc_consensus_aura::StartAuraParams {
 				slot_duration,
 				client: client.clone(),
@@ -449,9 +445,6 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 				force_authoring,
 				backoff_authoring_blocks: Option::<()>::None,
 				keystore: keystore_container.sync_keystore(),
-				can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(
-					client.executor().clone(),
-				),
 				block_proposal_slot_portion: sc_consensus_aura::SlotProportion::new(2f32 / 3f32),
 				max_block_proposal_slot_portion: None,
 				telemetry: telemetry.as_ref().map(|x| x.handle()),

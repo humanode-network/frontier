@@ -41,10 +41,10 @@ use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 use frame_support::traits::OnRuntimeUpgradeHelpersExt;
 use frame_support::{
 	codec::{Decode, Encode, MaxEncodedLen},
-	dispatch::DispatchResultWithPostInfo,
+	dispatch::{DispatchResultWithPostInfo, DispatchInfo, Pays, PostDispatchInfo},
 	scale_info::TypeInfo,
 	traits::{EnsureOrigin, Get, PalletInfoAccess},
-	weights::{DispatchInfo, Pays, PostDispatchInfo, Weight},
+	weights::Weight,
 };
 use frame_system::{pallet_prelude::OriginFor, CheckWeight, WeightInfo};
 use pallet_evm::{BlockHashMapping, FeeCalculator, GasWeightMapping, Runner};
@@ -100,7 +100,7 @@ impl<T> Call<T>
 where
 	OriginFor<T>: Into<Result<RawOrigin, OriginFor<T>>>,
 	T: Send + Sync + Config,
-	T::Call: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+	T::RuntimeCall: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 {
 	pub fn is_self_contained(&self) -> bool {
 		matches!(self, Call::transact { .. })
@@ -125,7 +125,7 @@ where
 	pub fn pre_dispatch_self_contained(
 		&self,
 		origin: &H160,
-		dispatch_info: &DispatchInfoOf<T::Call>,
+		dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
 		len: usize,
 	) -> Option<Result<(), TransactionValidityError>> {
 		if let Call::transact { transaction } = self {
@@ -145,7 +145,7 @@ where
 	pub fn validate_self_contained(
 		&self,
 		origin: &H160,
-		dispatch_info: &DispatchInfoOf<T::Call>,
+		dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
 		len: usize,
 	) -> Option<TransactionValidity> {
 		if let Call::transact { transaction } = self {
@@ -182,7 +182,7 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_timestamp::Config + pallet_evm::Config {
 		/// The overarching event type.
-		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// How Ethereum state root is calculated.
 		type StateRoot: Get<H256>;
 	}
@@ -229,7 +229,7 @@ pub mod pallet {
 					let r = Self::apply_validated_transaction(source, transaction)
 						.expect("pre-block apply transaction failed; the block cannot be built");
 
-					weight = weight.saturating_add(r.actual_weight.unwrap_or(0));
+					weight = weight.saturating_add(r.actual_weight.unwrap_or(Weight::zero()));
 				}
 			}
 			// Account for `on_finalize` weight:
@@ -246,7 +246,7 @@ pub mod pallet {
 				&EthereumStorageSchema::V3,
 			);
 
-			T::DbWeight::get().write
+			Weight::from_ref_time(T::DbWeight::get().write)
 		}
 	}
 
@@ -780,7 +780,7 @@ impl<T: Config> Pallet<T> {
 
 	pub fn migrate_block_v0_to_v2() -> Weight {
 		let db_weights = T::DbWeight::get();
-		let mut weight: Weight = db_weights.read;
+		let mut weight: u64 = db_weights.read;
 		let item = b"CurrentBlock";
 		let block_v0 = frame_support::storage::migration::get_storage_value::<ethereum::BlockV0>(
 			Self::name().as_bytes(),
@@ -797,7 +797,7 @@ impl<T: Config> Pallet<T> {
 				block_v2,
 			);
 		}
-		weight
+		Weight::from_ref_time(weight)
 	}
 
 	#[cfg(feature = "try-runtime")]

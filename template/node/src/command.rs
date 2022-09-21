@@ -169,7 +169,7 @@ pub fn run() -> sc_cli::Result<()> {
 			let runner = cli.create_runner(cmd)?;
 			runner.sync_run(|config| {
 				let PartialComponents {
-					client, backend, ..
+					client, ..
 				} = service::new_partial(&config, &cli)?;
 
 				// This switch needs to be in the client, since the client decides
@@ -187,6 +187,12 @@ pub fn run() -> sc_cli::Result<()> {
 						cmd.run::<Block, service::ExecutorDispatch>(config)
 					}
 					BenchmarkCmd::Block(cmd) => cmd.run(client),
+					#[cfg(not(feature = "runtime-benchmarks"))]
+ 					BenchmarkCmd::Storage(_) => Err(
+ 						"Storage benchmarking can be enabled with `--features runtime-benchmarks`."
+ 							.into(),
+ 					),
+					#[cfg(feature = "runtime-benchmarks")]
 					BenchmarkCmd::Storage(cmd) => {
 						let db = backend.expose_db();
 						let storage = backend.expose_storage();
@@ -194,7 +200,7 @@ pub fn run() -> sc_cli::Result<()> {
 					}
 					BenchmarkCmd::Overhead(cmd) => {
 						let ext_builder = RemarkBuilder::new(client.clone());
-						cmd.run(config, client, inherent_benchmark_data()?, &ext_builder)
+						cmd.run(config, client, inherent_benchmark_data()?, Vec::new(), &ext_builder)
 					}
 					BenchmarkCmd::Extrinsic(cmd) => {
 						// Register the *Remark* and *TKA* builders.
@@ -206,7 +212,7 @@ pub fn run() -> sc_cli::Result<()> {
 								ExistentialDeposit::get(),
 							)),
 						]);
-						cmd.run(client, inherent_benchmark_data()?, &ext_factory)
+						cmd.run(client, inherent_benchmark_data()?, Vec::new(), &ext_factory)
 					}
 					BenchmarkCmd::Machine(cmd) => cmd.run(
 						&config,

@@ -71,7 +71,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight((T::DbWeight::get().writes(1), DispatchClass::Mandatory))]
+		#[pallet::weight((T::DbWeight::get().writes(1).ref_time(), DispatchClass::Mandatory))]
 		pub fn note_min_gas_price_target(origin: OriginFor<T>, target: U256) -> DispatchResult {
 			ensure_none(origin)?;
 			assert!(
