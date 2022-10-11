@@ -20,9 +20,9 @@ parity-util-mem = { version = "0.11", optional = true }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
 
 # Substrate
-sp-runtime = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21", default-features = false }
+sp-runtime = { git = "https://github.com/humanode-network/substrate", branch = "time-warp", default-features = false }
 # Substrate FRAME
-frame-support = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21", default-features = false }
+frame-support = { git = "https://github.com/humanode-network/substrate", branch = "time-warp", default-features = false }
 
 [features]
 default = ["std"]

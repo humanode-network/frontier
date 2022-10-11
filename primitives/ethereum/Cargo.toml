@@ -19,10 +19,10 @@ fp-evm = { version = "3.0.0-dev", path = "../evm", default-features = false }
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false }
 
 # Substrate
-sp-core = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21", default-features = false }
-sp-std = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21", default-features = false }
+sp-core = { git = "https://github.com/humanode-network/substrate", branch = "time-warp", default-features = false }
+sp-std = { git = "https://github.com/humanode-network/substrate", branch = "time-warp", default-features = false }
 # Substrate FRAME
-frame-support = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21", default-features = false }
+frame-support = { git = "https://github.com/humanode-network/substrate", branch = "time-warp", default-features = false }
 
 [features]
 default = ["std"]

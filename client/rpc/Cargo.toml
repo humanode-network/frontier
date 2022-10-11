@@ -29,22 +29,22 @@ libsecp256k1 = "0.7"
 rlp = "0.5"
 
 # Substrate
-prometheus-endpoint = { package = "substrate-prometheus-endpoint", git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
-sc-client-api = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
-sc-network = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
-sc-network-common = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
-sc-rpc = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
-sc-service = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
-sc-transaction-pool = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
-sc-transaction-pool-api = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
-sp-api = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
-sp-block-builder = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
-sp-blockchain = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
-sp-consensus = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
-sp-core = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
-sp-io = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
-sp-runtime = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
-sp-storage = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
+prometheus-endpoint = { package = "substrate-prometheus-endpoint", git = "https://github.com/humanode-network/substrate", branch = "time-warp" }
+sc-client-api = { git = "https://github.com/humanode-network/substrate", branch = "time-warp" }
+sc-network = { git = "https://github.com/humanode-network/substrate", branch = "time-warp" }
+sc-network-common = { git = "https://github.com/humanode-network/substrate", branch = "time-warp" }
+sc-rpc = { git = "https://github.com/humanode-network/substrate", branch = "time-warp" }
+sc-service = { git = "https://github.com/humanode-network/substrate", branch = "time-warp" }
+sc-transaction-pool = { git = "https://github.com/humanode-network/substrate", branch = "time-warp" }
+sc-transaction-pool-api = { git = "https://github.com/humanode-network/substrate", branch = "time-warp" }
+sp-api = { git = "https://github.com/humanode-network/substrate", branch = "time-warp" }
+sp-block-builder = { git = "https://github.com/humanode-network/substrate", branch = "time-warp" }
+sp-blockchain = { git = "https://github.com/humanode-network/substrate", branch = "time-warp" }
+sp-consensus = { git = "https://github.com/humanode-network/substrate", branch = "time-warp" }
+sp-core = { git = "https://github.com/humanode-network/substrate", branch = "time-warp" }
+sp-io = { git = "https://github.com/humanode-network/substrate", branch = "time-warp" }
+sp-runtime = { git = "https://github.com/humanode-network/substrate", branch = "time-warp" }
+sp-storage = { git = "https://github.com/humanode-network/substrate", branch = "time-warp" }
 
 # Frontier
 fc-db = { version = "2.0.0-dev", path = "../db" }
@@ -56,11 +56,11 @@ fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }
 [dev-dependencies]
 tempfile = "3.3.0"
 # Substrate
-beefy-primitives = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
-sc-block-builder = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
-sc-client-db = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
-sp-consensus = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
-substrate-test-runtime-client = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-09-21" }
+beefy-primitives = { git = "https://github.com/humanode-network/substrate", branch = "time-warp" }
+sc-block-builder = { git = "https://github.com/humanode-network/substrate", branch = "time-warp" }
+sc-client-db = { git = "https://github.com/humanode-network/substrate", branch = "time-warp" }
+sp-consensus = { git = "https://github.com/humanode-network/substrate", branch = "time-warp" }
+substrate-test-runtime-client = { git = "https://github.com/humanode-network/substrate", branch = "time-warp" }
 # Frontier
 frontier-template-runtime = { path = "../../template/runtime" }
 
