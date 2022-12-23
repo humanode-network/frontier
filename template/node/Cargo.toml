@@ -22,40 +22,40 @@ codec = { package = "parity-scale-codec", version = "3.2.1", features = ["derive
 jsonrpsee = { version = "0.15.1", features = ["server", "macros"] }
 
 # Substrate
-sc-basic-authorship = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
-sc-cli = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23", features = ["wasmtime"] }
-sc-client-api = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
-sc-consensus = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
-sc-consensus-aura = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23", optional = true }
-sc-consensus-manual-seal = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23", optional = true }
-sc-executor = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23", features = ["wasmtime"] }
-sc-finality-grandpa = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
-sc-keystore = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
-sc-network = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
-sc-rpc = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
-sc-rpc-api = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
-sc-service = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23", features = ["wasmtime"] }
-sc-telemetry = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
-sc-transaction-pool = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
-sc-transaction-pool-api = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
-sp-api = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
-sp-block-builder = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
-sp-blockchain = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
-sp-consensus-aura = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
-sp-core = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
-sp-finality-grandpa = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
-sp-inherents = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
-sp-keyring = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
-sp-runtime = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
-sp-timestamp = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
+sc-basic-authorship = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
+sc-cli = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation", features = ["wasmtime"] }
+sc-client-api = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
+sc-consensus = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
+sc-consensus-aura = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation", optional = true }
+sc-consensus-manual-seal = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation", optional = true }
+sc-executor = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation", features = ["wasmtime"] }
+sc-finality-grandpa = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
+sc-keystore = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
+sc-network = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
+sc-rpc = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
+sc-rpc-api = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
+sc-service = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation", features = ["wasmtime"] }
+sc-telemetry = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
+sc-transaction-pool = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
+sc-transaction-pool-api = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
+sp-api = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
+sp-block-builder = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
+sp-blockchain = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
+sp-consensus-aura = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
+sp-core = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
+sp-finality-grandpa = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
+sp-inherents = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
+sp-keyring = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
+sp-runtime = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
+sp-timestamp = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
 # These dependencies are used for RPC
-pallet-transaction-payment-rpc = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
-substrate-frame-rpc-system = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
+pallet-transaction-payment-rpc = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
+substrate-frame-rpc-system = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
 # These dependencies are used for runtime benchmarking
-frame-benchmarking = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23", optional = true }
-frame-benchmarking-cli = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23", optional = true }
-frame-system = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
-pallet-transaction-payment = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
+frame-benchmarking = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation", optional = true }
+frame-benchmarking-cli = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation", optional = true }
+frame-system = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
+pallet-transaction-payment = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
 
 # Frontier
 fc-cli = { path = "../../client/cli" }
@@ -73,7 +73,7 @@ fp-storage = { path = "../../primitives/storage" }
 frontier-template-runtime = { path = "../runtime", default-features = false, features = ["std"] }
 
 [build-dependencies]
-substrate-build-script-utils = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
+substrate-build-script-utils = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation" }
 
 [features]
 default = ["aura", "with-rocksdb-weights"]

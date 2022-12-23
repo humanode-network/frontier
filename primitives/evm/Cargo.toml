@@ -18,10 +18,10 @@ serde = { version = "1.0", features = ["derive"], optional = true }
 codec = { package = "parity-scale-codec", version = "3.2.1", default-features = false }
 
 # Substrate
-sp-core = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23", default-features = false }
-sp-std = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23", default-features = false }
+sp-core = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation", default-features = false }
+sp-std = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation", default-features = false }
 # Substrate FRAME
-frame-support = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23", default-features = false }
+frame-support = { git = "https://github.com/humanode-network/substrate", branch = "patch-pallet-error-macro-clippy-cast-possible-truncation", default-features = false }
 
 [features]
 default = ["std"]
