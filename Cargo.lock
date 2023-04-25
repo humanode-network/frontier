@@ -1791,6 +1791,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "evm-balances"
+version = "1.0.0-dev"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "evm-core"
 version = "0.37.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2497,6 +2509,7 @@ dependencies = [
 name = "frontier-template-runtime"
 version = "0.0.0"
 dependencies = [
+ "evm-balances",
  "fp-evm",
  "fp-rpc",
  "fp-self-contained",

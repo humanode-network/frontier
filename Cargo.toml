@@ -1,5 +1,6 @@
 [workspace]
 members = [
+	"frame/evm-balances",
 	"frame/base-fee",
 	"frame/dynamic-fee",
 	"frame/ethereum",
@@ -132,6 +133,7 @@ fp-rpc = { version = "3.0.0-dev", path = "primitives/rpc", default-features = fa
 fp-self-contained = { version = "1.0.0-dev", path = "primitives/self-contained", default-features = false }
 fp-storage = { version = "2.0.0", path = "primitives/storage", default-features = false }
 # Frontier FRAME
+evm-balances = { version = "1.0.0-dev", path = "frame/evm-balances", default-features = false }
 pallet-base-fee = { version = "1.0.0", path = "frame/base-fee", default-features = false }
 pallet-dynamic-fee = { version = "4.0.0-dev", path = "frame/dynamic-fee", default-features = false }
 pallet-ethereum = { version = "4.0.0-dev", path = "frame/ethereum", default-features = false }

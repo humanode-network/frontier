@@ -67,6 +67,8 @@ pub type Signature = MultiSignature;
 /// to the public key of our transaction signing scheme.
 pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
 
+pub type EvmAccountId = H160;
+
 /// The type for looking up accounts. We don't expect more than 4 billion of them, but you
 /// never know...
 pub type AccountIndex = u32;
@@ -326,15 +328,15 @@ parameter_types! {
 }
 
 impl pallet_evm::Config for Runtime {
-	type AccountId = AccountId;
+	type AccountId = EvmAccountId;
 	type Index = Index;
 	type FeeCalculator = BaseFee;
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
 	type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
 	type CallOrigin = EnsureAddressTruncated;
-	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
-	type Currency = Balances;
+	type AddressMapping = pallet_evm::IdentityAddressMapping;
+	type Currency = EvmBalances;
 	type RuntimeEvent = RuntimeEvent;
 	type PrecompilesType = FrontierPrecompiles<Self>;
 	type PrecompilesValue = PrecompilesValue;
@@ -344,6 +346,14 @@ impl pallet_evm::Config for Runtime {
 	type OnChargeTransaction = ();
 	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated<Aura>;
+}
+
+impl evm_balances::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type AccountId = EvmAccountId;
+	type Balance = Balance;
+	type ExistentialDeposit = ExistentialDeposit;
+	type DustRemoval = ();
 }
 
 parameter_types! {
@@ -414,6 +424,7 @@ construct_runtime!(
 		DynamicFee: pallet_dynamic_fee,
 		BaseFee: pallet_base_fee,
 		HotfixSufficients: pallet_hotfix_sufficients,
+		EvmBalances: evm_balances,
 	}
 );
 
