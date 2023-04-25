@@ -76,7 +76,7 @@ use frame_system::RawOrigin;
 use impl_trait_for_tuples::impl_for_tuples;
 use sp_core::{Hasher, H160, H256, U256};
 use sp_runtime::{
-	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero},
+	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero, One},
 	AccountId32, DispatchErrorWithPostInfo,
 };
 use sp_std::{cmp::min, vec::Vec};
@@ -102,6 +102,8 @@ pub mod pallet {
 	use super::*;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
+	use sp_runtime::traits::{MaybeDisplay, AtLeast32Bit};
+	use sp_std::fmt::Debug;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -110,6 +112,26 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_timestamp::Config {
+		type AccountId: Parameter
+			+ Member
+			+ MaybeSerializeDeserialize
+			+ Debug
+			+ MaybeDisplay
+			+ Ord
+			+ MaxEncodedLen;
+
+		/// Account index (aka nonce) type. This stores the number of previous transactions
+		/// associated with a sender account.
+		type Index: Parameter
+			+ Member
+			+ MaybeSerializeDeserialize
+			+ Debug
+			+ Default
+			+ MaybeDisplay
+			+ AtLeast32Bit
+			+ Copy
+			+ MaxEncodedLen;
+
 		/// Calculator for current gas price.
 		type FeeCalculator: FeeCalculator;
 
@@ -126,9 +148,9 @@ pub mod pallet {
 		type CallOrigin: EnsureAddressOrigin<Self::RuntimeOrigin>;
 
 		/// Mapping from address to account id.
-		type AddressMapping: AddressMapping<Self::AccountId>;
+		type AddressMapping: AddressMapping<<Self as Config>::AccountId>;
 		/// Currency type for withdraw and balance storage.
-		type Currency: Currency<Self::AccountId> + Inspect<Self::AccountId>;
+		type Currency: Currency<<Self as Config>::AccountId> + Inspect<<Self as Config>::AccountId>;
 
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -463,7 +485,7 @@ pub mod pallet {
 					MAX_ACCOUNT_NONCE,
 					UniqueSaturatedInto::<usize>::unique_saturated_into(account.nonce),
 				) {
-					frame_system::Pallet::<T>::inc_account_nonce(&account_id);
+					Pallet::<T>::inc_account_nonce(&account_id);
 				}
 
 				T::Currency::deposit_creating(&account_id, account.balance.unique_saturated_into());
@@ -485,15 +507,32 @@ pub mod pallet {
 	#[pallet::getter(fn account_storages)]
 	pub type AccountStorages<T: Config> =
 		StorageDoubleMap<_, Blake2_128Concat, H160, Blake2_128Concat, H256, H256, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn account_nonces)]
+	pub type AccountNonces<T: Config> = StorageMap<_, Blake2_128Concat, <T as Config>::AccountId, <T as Config>::Index, ValueQuery>;
 }
+
+impl<T: Config> Pallet<T> {
+	/// Retrieve the account transaction counter from storage.
+	pub fn account_nonce(who: &<T as Config>::AccountId) -> <T as Config>::Index {
+		AccountNonces::<T>::get(who)
+	}
+
+	/// Increment a particular account's nonce by 1.
+	pub fn inc_account_nonce(who: &<T as Config>::AccountId) {
+		AccountNonces::<T>::mutate(who, |a| *a += <T as Config>::Index::one());
+	}
+}
+
 
 /// Type alias for currency balance.
 pub type BalanceOf<T> =
-	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+	<<T as Config>::Currency as Currency<<T as Config>::AccountId>>::Balance;
 
 /// Type alias for negative imbalance during fees
 type NegativeImbalanceOf<C, T> =
-	<C as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
+	<C as Currency<<T as Config>::AccountId>>::NegativeImbalance;
 
 pub trait EnsureAddressOrigin<OuterOrigin> {
 	/// Success return type.
@@ -667,7 +706,7 @@ impl<T: Config> Pallet<T> {
 	pub fn remove_account(address: &H160) {
 		if <AccountCodes<T>>::contains_key(address) {
 			let account_id = T::AddressMapping::into_account_id(*address);
-			let _ = frame_system::Pallet::<T>::dec_sufficients(&account_id);
+			// let _ = frame_system::Pallet::<T>::dec_sufficients(&account_id);
 		}
 
 		<AccountCodes<T>>::remove(address);
@@ -683,7 +722,7 @@ impl<T: Config> Pallet<T> {
 
 		if !<AccountCodes<T>>::contains_key(address) {
 			let account_id = T::AddressMapping::into_account_id(address);
-			let _ = frame_system::Pallet::<T>::inc_sufficients(&account_id);
+			// let _ = frame_system::Pallet::<T>::inc_sufficients(&account_id);
 		}
 
 		<AccountCodes<T>>::insert(address, code);
@@ -693,7 +732,7 @@ impl<T: Config> Pallet<T> {
 	pub fn account_basic(address: &H160) -> (Account, frame_support::weights::Weight) {
 		let account_id = T::AddressMapping::into_account_id(*address);
 
-		let nonce = frame_system::Pallet::<T>::account_nonce(&account_id);
+		let nonce = Pallet::<T>::account_nonce(&account_id);
 		// keepalive `true` takes into account ExistentialDeposit as part of what's considered liquid balance.
 		let balance = T::Currency::reducible_balance(&account_id, true);
 
@@ -749,17 +788,17 @@ pub struct EVMCurrencyAdapter<C, OU>(sp_std::marker::PhantomData<(C, OU)>);
 impl<T, C, OU> OnChargeEVMTransaction<T> for EVMCurrencyAdapter<C, OU>
 where
 	T: Config,
-	C: Currency<<T as frame_system::Config>::AccountId>,
+	C: Currency<<T as Config>::AccountId>,
 	C::PositiveImbalance: Imbalance<
-		<C as Currency<<T as frame_system::Config>::AccountId>>::Balance,
+		<C as Currency<<T as Config>::AccountId>>::Balance,
 		Opposite = C::NegativeImbalance,
 	>,
 	C::NegativeImbalance: Imbalance<
-		<C as Currency<<T as frame_system::Config>::AccountId>>::Balance,
+		<C as Currency<<T as Config>::AccountId>>::Balance,
 		Opposite = C::PositiveImbalance,
 	>,
 	OU: OnUnbalanced<NegativeImbalanceOf<C, T>>,
-	U256: UniqueSaturatedInto<<C as Currency<<T as frame_system::Config>::AccountId>>::Balance>,
+	U256: UniqueSaturatedInto<<C as Currency<<T as Config>::AccountId>>::Balance>,
 {
 	// Kept type as Option to satisfy bound of Default
 	type LiquidityInfo = Option<NegativeImbalanceOf<C, T>>;
@@ -843,10 +882,10 @@ where
 impl<T> OnChargeEVMTransaction<T> for ()
 	where
 	T: Config,
-	<T::Currency as Currency<<T as frame_system::Config>::AccountId>>::PositiveImbalance:
-		Imbalance<<T::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance, Opposite = <T::Currency as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance>,
-	<T::Currency as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance:
-Imbalance<<T::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance, Opposite = <T::Currency as Currency<<T as frame_system::Config>::AccountId>>::PositiveImbalance>,
+	<T::Currency as Currency<<T as Config>::AccountId>>::PositiveImbalance:
+		Imbalance<<T::Currency as Currency<<T as Config>::AccountId>>::Balance, Opposite = <T::Currency as Currency<<T as Config>::AccountId>>::NegativeImbalance>,
+	<T::Currency as Currency<<T as Config>::AccountId>>::NegativeImbalance:
+Imbalance<<T::Currency as Currency<<T as Config>::AccountId>>::Balance, Opposite = <T::Currency as Currency<<T as Config>::AccountId>>::PositiveImbalance>,
 U256: UniqueSaturatedInto<BalanceOf<T>>,
 
 {

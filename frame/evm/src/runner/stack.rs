@@ -721,7 +721,7 @@ where
 
 	fn inc_nonce(&mut self, address: H160) {
 		let account_id = T::AddressMapping::into_account_id(address);
-		frame_system::Pallet::<T>::inc_account_nonce(&account_id);
+		Pallet::<T>::inc_account_nonce(&account_id);
 	}
 
 	fn set_storage(&mut self, address: H160, index: H256, value: H256) {

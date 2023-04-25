@@ -139,12 +139,14 @@ parameter_types! {
 	pub WeightPerGas: Weight = Weight::from_ref_time(20_000);
 }
 impl pallet_evm::Config for Test {
+	type AccountId = H160;
+	type Index = u64;
 	type FeeCalculator = FixedGasPrice;
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
 
 	type BlockHashMapping = pallet_evm::SubstrateBlockHashMapping<Self>;
-	type CallOrigin = EnsureAddressRoot<Self::AccountId>;
+	type CallOrigin = EnsureAddressRoot<<Self as pallet_evm::Config>::AccountId>;
 
 	type AddressMapping = IdentityAddressMapping;
 	type Currency = Balances;
