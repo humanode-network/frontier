@@ -32,7 +32,7 @@ use sp_std::{boxed::Box, prelude::*, str::FromStr};
 
 use fp_evm::{ExitError, ExitReason, Transfer};
 use pallet_evm::{
-	Context, EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping,
+	Context, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping,
 	PrecompileHandle,
 };
 
@@ -146,7 +146,6 @@ impl pallet_evm::Config for Test {
 	type BlockHashMapping = pallet_evm::SubstrateBlockHashMapping<Self>;
 	type CallOrigin = EnsureAddressRoot<Self::AccountId>;
 
-	type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
 	type AddressMapping = IdentityAddressMapping;
 	type Currency = Balances;
 

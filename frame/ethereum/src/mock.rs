@@ -157,7 +157,6 @@ impl pallet_evm::Config for Test {
 	type WeightPerGas = WeightPerGas;
 	type BlockHashMapping = crate::EthereumBlockHashMapping<Self>;
 	type CallOrigin = EnsureAddressTruncated;
-	type WithdrawOrigin = EnsureAddressTruncated;
 	type AddressMapping = HashedAddressMapping;
 	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;

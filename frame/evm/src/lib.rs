@@ -124,8 +124,6 @@ pub mod pallet {
 
 		/// Allow the origin to call on behalf of given address.
 		type CallOrigin: EnsureAddressOrigin<Self::RuntimeOrigin>;
-		/// Allow the origin to withdraw on behalf of given address.
-		type WithdrawOrigin: EnsureAddressOrigin<Self::RuntimeOrigin, Success = Self::AccountId>;
 
 		/// Mapping from address to account id.
 		type AddressMapping: AddressMapping<Self::AccountId>;
@@ -163,29 +161,8 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Withdraw balance from EVM into currency/balances pallet.
-		#[pallet::call_index(0)]
-		#[pallet::weight(0)]
-		pub fn withdraw(
-			origin: OriginFor<T>,
-			address: H160,
-			value: BalanceOf<T>,
-		) -> DispatchResult {
-			let destination = T::WithdrawOrigin::ensure_address_origin(&address, origin)?;
-			let address_account_id = T::AddressMapping::into_account_id(address);
-
-			T::Currency::transfer(
-				&address_account_id,
-				&destination,
-				value,
-				ExistenceRequirement::AllowDeath,
-			)?;
-
-			Ok(())
-		}
-
 		/// Issue an EVM call operation. This is similar to a message call transaction in Ethereum.
-		#[pallet::call_index(1)]
+		#[pallet::call_index(0)]
 		#[pallet::weight({
 			let without_base_extrinsic_weight = true;
 			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
@@ -252,7 +229,7 @@ pub mod pallet {
 
 		/// Issue an EVM create operation. This is similar to a contract creation transaction in
 		/// Ethereum.
-		#[pallet::call_index(2)]
+		#[pallet::call_index(1)]
 		#[pallet::weight({
 			let without_base_extrinsic_weight = true;
 			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
@@ -328,7 +305,7 @@ pub mod pallet {
 		}
 
 		/// Issue an EVM create2 operation.
-		#[pallet::call_index(3)]
+		#[pallet::call_index(2)]
 		#[pallet::weight({
 			let without_base_extrinsic_weight = true;
 			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)

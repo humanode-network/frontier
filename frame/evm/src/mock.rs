@@ -32,7 +32,7 @@ use sp_runtime::{
 use sp_std::{boxed::Box, prelude::*, str::FromStr};
 
 use crate::{
-	EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping, PrecompileHandle,
+	EnsureAddressRoot, FeeCalculator, IdentityAddressMapping, PrecompileHandle,
 	PrecompileResult, PrecompileSet,
 };
 
@@ -139,7 +139,6 @@ impl crate::Config for Test {
 	type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
 	type CallOrigin = EnsureAddressRoot<Self::AccountId>;
 
-	type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
 	type AddressMapping = IdentityAddressMapping;
 	type Currency = Balances;
 
