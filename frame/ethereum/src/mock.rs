@@ -152,6 +152,8 @@ impl AddressMapping<AccountId32> for HashedAddressMapping {
 }
 
 impl pallet_evm::Config for Test {
+	type AccountId = AccountId32;
+	type Index = u64;
 	type FeeCalculator = FixedGasPrice;
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
