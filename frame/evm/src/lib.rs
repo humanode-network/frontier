@@ -536,6 +536,11 @@ pub mod pallet {
 	#[pallet::getter(fn account_nonces)]
 	pub type AccountNonces<T: Config> =
 		StorageMap<_, Blake2_128Concat, <T as Config>::AccountId, <T as Config>::Index, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn account_sufficients)]
+	pub type AccountSufficients<T: Config> =
+		StorageMap<_, Blake2_128Concat, <T as Config>::AccountId, u32, ValueQuery>;
 }
 
 impl<T: Config> Pallet<T> {
@@ -547,6 +552,50 @@ impl<T: Config> Pallet<T> {
 	/// Increment a particular account's nonce by 1.
 	pub fn inc_account_nonce(who: &<T as Config>::AccountId) {
 		AccountNonces::<T>::mutate(who, |a| *a += <T as Config>::Index::one());
+	}
+
+	/// Increment the self-sufficient reference counter on an account.
+	pub fn inc_sufficients(who: &<T as Config>::AccountId) {
+		AccountSufficients::<T>::mutate(who, |sufficients| {
+			if *sufficients == 0 {
+				// Account is being created.
+				*sufficients = 1;
+				// Self::on_created_account(who.clone(), a);
+			} else {
+				*sufficients = sufficients.saturating_add(1);
+			}
+		})
+	}
+
+	/// Decrement the sufficients reference counter on an account.
+	///
+	/// This *MUST* only be done once for every time you called `inc_sufficients` on `who`.
+	pub fn dec_sufficients(who: &<T as Config>::AccountId) {
+		AccountSufficients::<T>::mutate_exists(who, |maybe_sufficients| {
+			if let Some(mut sufficients) = maybe_sufficients.take() {
+				if sufficients == 0 {
+					// Logic error - cannot decrement beyond zero.
+					log::error!(
+						target: "frame-evm",
+						"Logic error: Unexpected underflow in reducing sufficients",
+					);
+				}
+				match sufficients {
+					1 => {
+						// Pallet::<T>::on_killed_account(who.clone());
+					},
+					x => {
+						sufficients = x - 1;
+						*maybe_sufficients = Some(sufficients);
+					},
+				}
+			} else {
+				log::error!(
+					target: "frame-evm",
+					"Logic error: Account already dead when reducing provider",
+				);
+			}
+		})
 	}
 }
 
@@ -730,8 +779,7 @@ impl<T: Config> Pallet<T> {
 	pub fn remove_account(address: &H160) {
 		if <AccountCodes<T>>::contains_key(address) {
 			let account_id = T::AddressMapping::into_account_id(*address);
-			// ATTENTION. CHECK.
-			// let _ = frame_system::Pallet::<T>::dec_sufficients(&account_id);
+			Self::dec_sufficients(&account_id);
 		}
 
 		<AccountCodes<T>>::remove(address);
@@ -747,8 +795,7 @@ impl<T: Config> Pallet<T> {
 
 		if !<AccountCodes<T>>::contains_key(address) {
 			let account_id = T::AddressMapping::into_account_id(address);
-			// ATTENTION. CHECK.
-			// let _ = frame_system::Pallet::<T>::inc_sufficients(&account_id);
+			Self::inc_sufficients(&account_id);
 		}
 
 		<AccountCodes<T>>::insert(address, code);
