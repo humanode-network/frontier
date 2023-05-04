@@ -326,8 +326,7 @@ parameter_types! {
 }
 
 impl pallet_evm::Config for Runtime {
-	type AccountId = AccountId;
-	type Index = Index;
+	type AccountProvider = pallet_evm::NativeSystemAccountProvider<Self>;
 	type FeeCalculator = BaseFee;
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
