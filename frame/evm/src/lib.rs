@@ -76,7 +76,7 @@ use frame_system::RawOrigin;
 use impl_trait_for_tuples::impl_for_tuples;
 use sp_core::{Hasher, H160, H256, U256};
 use sp_runtime::{
-	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero},
+	traits::{BadOrigin, Saturating, UniqueSaturatedInto, AtLeast32Bit, Zero},
 	AccountId32, DispatchErrorWithPostInfo,
 };
 use sp_std::{cmp::min, vec::Vec};
@@ -919,7 +919,7 @@ impl<T> OnCreate<T> for Tuple {
 
 pub trait AccountProvider {
 	type AccountId;
-	type Index;
+	type Index: AtLeast32Bit;
 
 	fn account_nonce(who: &Self::AccountId) -> Self::Index;
 	fn inc_account_nonce(who: &Self::AccountId);
