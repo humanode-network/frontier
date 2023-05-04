@@ -20,8 +20,9 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_runtime::traits::One;
-
+use sp_runtime::{traits::One, RuntimeDebug};
+use scale_codec::{Encode, Decode, MaxEncodedLen};
+use scale_info::TypeInfo;
 pub use evm::{
 	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
 };
@@ -32,6 +33,43 @@ pub use fp_evm::{
 };
 
 pub use pallet::*;
+
+/// Type used to encode the number of references an account has.
+pub type RefCount = u32;
+
+/// Some resultant status relevant to incrementing a provider/self-sufficient reference.
+#[derive(Eq, PartialEq, RuntimeDebug)]
+pub enum IncRefStatus {
+	/// Account was created.
+	Created,
+	/// Account already existed.
+	Existed,
+}
+
+/// Some resultant status relevant to decrementing a provider/self-sufficient reference.
+#[derive(Eq, PartialEq, RuntimeDebug)]
+pub enum DecRefStatus {
+	/// Account was destroyed.
+	Reaped,
+	/// Account still exists.
+	Exists,
+}
+
+/// Information of an account.
+#[derive(Clone, Eq, PartialEq, Default, RuntimeDebug, Encode, Decode, TypeInfo, MaxEncodedLen)]
+pub struct AccountInfo<Index> {
+	/// The number of transactions this account has sent.
+	pub nonce: Index,
+	/// The number of other modules that currently depend on this account's existence. The account
+	/// cannot be reaped until this is zero.
+	pub consumers: RefCount,
+	/// The number of other modules that allow this account to exist. The account may not be reaped
+	/// until this and `sufficients` are both zero.
+	pub providers: RefCount,
+	/// The number of modules that allow this account to exist for their own purposes only. The
+	/// account may not be reaped until this and `providers` are both zero.
+	pub sufficients: RefCount,
+}
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -80,6 +118,17 @@ pub mod pallet {
 		type OnKilledAccount: OnKilledAccount<<Self as Config>::AccountId>;
 	}
 
+	/// The full account information for a particular account ID.
+	#[pallet::storage]
+	#[pallet::getter(fn full_account)]
+	pub type FullAccount<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,
+		<T as Config>::AccountId,
+		AccountInfo<<T as Config>::Index>,
+		ValueQuery,
+	>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -88,16 +137,6 @@ pub mod pallet {
 		/// An account was reaped.
 		KilledAccount { account: <T as Config>::AccountId },
 	}
-
-	#[pallet::storage]
-	#[pallet::getter(fn account_nonces)]
-	pub type AccountNonces<T: Config> =
-		StorageMap<_, Blake2_128Concat, <T as Config>::AccountId, <T as Config>::Index, ValueQuery>;
-
-	#[pallet::storage]
-	#[pallet::getter(fn account_sufficients)]
-	pub type AccountSufficients<T: Config> =
-		StorageMap<_, Blake2_128Concat, <T as Config>::AccountId, u32, ValueQuery>;
 }
 
 impl<T: Config> Pallet<T> {
@@ -115,23 +154,25 @@ impl<T: Config> Pallet<T> {
 
 	/// Retrieve the account transaction counter from storage.
 	pub fn account_nonce(who: &<T as Config>::AccountId) -> <T as Config>::Index {
-		AccountNonces::<T>::get(who)
+		FullAccount::<T>::get(who).nonce
 	}
 
 	/// Increment a particular account's nonce by 1.
 	pub fn inc_account_nonce(who: &<T as Config>::AccountId) {
-		AccountNonces::<T>::mutate(who, |a| *a += <T as Config>::Index::one());
+		FullAccount::<T>::mutate(who, |a| a.nonce += <T as pallet::Config>::Index::one());
 	}
 
 	/// Increment the self-sufficient reference counter on an account.
-	pub fn inc_sufficients(who: &<T as Config>::AccountId) {
-		AccountSufficients::<T>::mutate(who, |sufficients| {
-			if *sufficients == 0 {
+	pub fn inc_sufficients(who: &<T as Config>::AccountId) -> IncRefStatus {
+		FullAccount::<T>::mutate(who, |a| {
+			if a.providers + a.sufficients == 0 {
 				// Account is being created.
-				*sufficients = 1;
+				a.sufficients = 1;
 				Self::on_created_account(who.clone());
+				IncRefStatus::Created
 			} else {
-				*sufficients = sufficients.saturating_add(1);
+				a.sufficients = a.sufficients.saturating_add(1);
+				IncRefStatus::Existed
 			}
 		})
 	}
@@ -139,30 +180,33 @@ impl<T: Config> Pallet<T> {
 	/// Decrement the sufficients reference counter on an account.
 	///
 	/// This *MUST* only be done once for every time you called `inc_sufficients` on `who`.
-	pub fn dec_sufficients(who: &<T as Config>::AccountId) {
-		AccountSufficients::<T>::mutate_exists(who, |maybe_sufficients| {
-			if let Some(mut sufficients) = maybe_sufficients.take() {
-				if sufficients == 0 {
+	pub fn dec_sufficients(who: &<T as Config>::AccountId) -> DecRefStatus {
+		FullAccount::<T>::mutate_exists(who, |maybe_account| {
+			if let Some(mut account) = maybe_account.take() {
+				if account.sufficients == 0 {
 					// Logic error - cannot decrement beyond zero.
 					log::error!(
-						target: "frame-evm",
+						target: "frame-evm-system",
 						"Logic error: Unexpected underflow in reducing sufficients",
 					);
 				}
-				match sufficients {
-					1 => {
+				match (account.sufficients, account.providers) {
+					(0, 0) | (1, 0) => {
 						Pallet::<T>::on_killed_account(who.clone());
+						DecRefStatus::Reaped
 					},
-					x => {
-						sufficients = x - 1;
-						*maybe_sufficients = Some(sufficients);
+					(x, _) => {
+						account.sufficients = x - 1;
+						*maybe_account = Some(account);
+						DecRefStatus::Exists
 					},
 				}
 			} else {
 				log::error!(
-					target: "frame-evm",
+					target: "frame-evm-system",
 					"Logic error: Account already dead when reducing provider",
 				);
+				DecRefStatus::Reaped
 			}
 		})
 	}
