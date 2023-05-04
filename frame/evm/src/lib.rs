@@ -919,9 +919,32 @@ impl<T> OnCreate<T> for Tuple {
 
 pub trait AccountProvider {
 	type AccountId;
+	type Index;
 
-	fn account_nonce(who: &Self::AccountId) -> u128;
+	fn account_nonce(who: &Self::AccountId) -> Self::Index;
 	fn inc_account_nonce(who: &Self::AccountId);
 	fn inc_sufficients(who: &Self::AccountId);
 	fn dec_sufficients(who: &Self::AccountId);
+}
+
+pub struct NativeSystemAccountProvider<T>(sp_std::marker::PhantomData<T>);
+
+impl<T: Config> AccountProvider for NativeSystemAccountProvider<T> {
+	type AccountId = <T as frame_system::Config>::AccountId;
+	type Index = <T as frame_system::Config>::Index;
+
+	fn account_nonce(who: &Self::AccountId) -> Self::Index {
+		frame_system::Pallet::<T>::account_nonce(&who)
+	}
+
+	fn inc_account_nonce(who: &Self::AccountId) {
+		frame_system::Pallet::<T>::inc_account_nonce(&who)
+	}
+
+	fn inc_sufficients(who: &Self::AccountId) {
+		let _ = frame_system::Pallet::<T>::inc_sufficients(&who);
+	}
+	fn dec_sufficients(who: &Self::AccountId) {
+		let _ = frame_system::Pallet::<T>::dec_sufficients(&who);
+	}
 }
