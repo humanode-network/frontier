@@ -23,14 +23,6 @@
 use sp_runtime::{traits::One, RuntimeDebug};
 use scale_codec::{Encode, Decode, MaxEncodedLen};
 use scale_info::TypeInfo;
-pub use evm::{
-	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
-};
-pub use fp_evm::{
-	Account, CallInfo, CreateInfo, ExecutionInfo, FeeCalculator, InvalidEvmTransactionError,
-	LinearCostPrecompile, Log, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
-	PrecompileResult, PrecompileSet, Vicinity,
-};
 
 pub use pallet::*;
 
