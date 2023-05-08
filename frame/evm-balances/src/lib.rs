@@ -32,11 +32,14 @@ use frame_support::{
         tokens::{DepositConsequence, WithdrawConsequence},
         Currency, ExistenceRequirement,
         ExistenceRequirement::AllowDeath,
-        Get, Imbalance, OnUnbalanced, SignedImbalance, StorageVersion, WithdrawReasons,
+        Get, Imbalance, OnUnbalanced, SignedImbalance, StorageVersion, WithdrawReasons, StoredMap
     },
 };
 use scale_info::TypeInfo;
 use sp_std::{cmp, fmt::Debug, result};
+
+pub mod account_data;
+use account_data::AccountData;
 
 mod imbalances;
 pub use imbalances::{NegativeImbalance, PositiveImbalance};
@@ -67,48 +70,6 @@ impl From<WithdrawReasons> for Reasons {
         } else {
             Reasons::Misc
         }
-    }
-}
-
-/// All balance information for an account.
-#[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug, MaxEncodedLen, TypeInfo)]
-pub struct AccountData<Balance> {
-    /// Non-reserved part of the balance. There may still be restrictions on this, but it is the
-    /// total pool what may in principle be transferred, reserved and used for tipping.
-    ///
-    /// This is the only balance that matters in terms of most operations on tokens. It
-    /// alone is used to determine the balance when in the contract execution environment.
-    pub free: Balance,
-    /// Balance which is reserved and may not be used at all.
-    ///
-    /// This can still get slashed, but gets slashed last of all.
-    ///
-    /// This balance is a 'reserve' balance that other subsystems use in order to set aside tokens
-    /// that are still 'owned' by the account holder, but which are suspendable.
-    /// This includes named reserve and unnamed reserve.
-    pub reserved: Balance,
-    /// The amount that `free` may not drop below when withdrawing for *anything except transaction
-    /// fee payment*.
-    pub misc_frozen: Balance,
-    /// The amount that `free` may not drop below when withdrawing specifically for transaction
-    /// fee payment.
-    pub fee_frozen: Balance,
-}
-
-impl<Balance: Saturating + Copy + Ord> AccountData<Balance> {
-    /// The amount that this account's free balance may not be reduced beyond for the given
-    /// `reasons`.
-    fn frozen(&self, reasons: Reasons) -> Balance {
-        match reasons {
-            Reasons::All => self.misc_frozen.max(self.fee_frozen),
-            Reasons::Misc => self.misc_frozen,
-            Reasons::Fee => self.fee_frozen,
-        }
-    }
-
-    /// The total balance in this account including any that is reserved and ignoring any frozen.
-    fn total(&self) -> Balance {
-        self.free.saturating_add(self.reserved)
     }
 }
 
@@ -163,6 +124,9 @@ pub mod pallet {
         #[pallet::constant]
         type ExistentialDeposit: Get<Self::Balance>;
 
+		/// The means of storing the balances of an account.
+		type AccountStore: StoredMap<<Self as Config<I>>::AccountId, AccountData<Self::Balance>>;
+
         /// Handler for the unbalanced reduction when removing a dust account.
         type DustRemoval: OnUnbalanced<NegativeImbalance<Self, I>>;
     }
@@ -184,17 +148,6 @@ pub mod pallet {
     #[pallet::whitelist_storage]
     pub type InactiveIssuance<T: Config<I>, I: 'static = ()> =
         StorageValue<_, T::Balance, ValueQuery>;
-
-    /// The full account balance information for a particular account ID.
-    #[pallet::storage]
-    #[pallet::getter(fn account_store)]
-    pub type AccountStore<T: Config<I>, I: 'static = ()> = StorageMap<
-        _,
-        Blake2_128Concat,
-        <T as Config<I>>::AccountId,
-        AccountData<T::Balance>,
-        ValueQuery,
-    >;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -281,9 +234,31 @@ impl<T: Config<I>, I: 'static> Drop for DustCleaner<T, I> {
 }
 
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
+	/// Get the free balance of an account.
+	pub fn free_balance(who: impl sp_std::borrow::Borrow<<T as Config<I>>::AccountId>) -> T::Balance {
+		Self::account(who.borrow()).free
+	}
+
+	/// Get the balance of an account that can be used for transfers, reservations, or any other
+	/// non-locking, non-transaction-fee activity. Will be at most `free_balance`.
+	pub fn usable_balance(who: impl sp_std::borrow::Borrow<<T as Config<I>>::AccountId>) -> T::Balance {
+		Self::account(who.borrow()).usable(Reasons::Misc)
+	}
+
+	/// Get the balance of an account that can be used for paying transaction fees (not tipping,
+	/// or any other kind of fees, though). Will be at most `free_balance`.
+	pub fn usable_balance_for_fees(who: impl sp_std::borrow::Borrow<<T as Config<I>>::AccountId>) -> T::Balance {
+		Self::account(who.borrow()).usable(Reasons::Fee)
+	}
+
+	/// Get the reserved balance of an account.
+	pub fn reserved_balance(who: impl sp_std::borrow::Borrow<<T as Config<I>>::AccountId>) -> T::Balance {
+		Self::account(who.borrow()).reserved
+	}
+
     /// Get all balance information for an account.
     fn account(who: &<T as Config<I>>::AccountId) -> AccountData<T::Balance> {
-        <AccountStore<T, I>>::get(who)
+        T::AccountStore::get(who)
     }
 
     /// Mutate an account to some new value, or delete it entirely with `None`. Will enforce
@@ -322,7 +297,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         who: &<T as Config<I>>::AccountId,
         f: impl FnOnce(&mut AccountData<T::Balance>, bool) -> Result<R, E>,
     ) -> Result<(R, DustCleaner<T, I>), E> {
-        let result = <AccountStore<T, I>>::try_mutate_exists(who, |maybe_account| {
+        let result = T::AccountStore::try_mutate_exists(who, |maybe_account| {
             let is_new = maybe_account.is_none();
             let mut account = maybe_account.take().unwrap_or_default();
             f(&mut account, is_new).map(move |result| {
@@ -852,15 +827,19 @@ impl<T: Config<I>, I: 'static> fungible::Inspect<<T as Config<I>>::AccountId> fo
     fn total_issuance() -> Self::Balance {
         TotalIssuance::<T, I>::get()
     }
+
     fn active_issuance() -> Self::Balance {
         TotalIssuance::<T, I>::get().saturating_sub(InactiveIssuance::<T, I>::get())
     }
+
     fn minimum_balance() -> Self::Balance {
         T::ExistentialDeposit::get()
     }
+
     fn balance(who: &<T as Config<I>>::AccountId) -> Self::Balance {
         Self::account(who).total()
     }
+
     fn reducible_balance(who: &<T as Config<I>>::AccountId, keep_alive: bool) -> Self::Balance {
         let a = Self::account(who);
         // Liquid balance is what is neither reserved nor locked/frozen.
@@ -878,6 +857,7 @@ impl<T: Config<I>, I: 'static> fungible::Inspect<<T as Config<I>>::AccountId> fo
             liquid.saturating_sub(must_remain_to_exist)
         }
     }
+
     fn can_deposit(
         who: &<T as Config<I>>::AccountId,
         amount: Self::Balance,
@@ -885,6 +865,7 @@ impl<T: Config<I>, I: 'static> fungible::Inspect<<T as Config<I>>::AccountId> fo
     ) -> DepositConsequence {
         Self::deposit_consequence(who, amount, &Self::account(who), mint)
     }
+
     fn can_withdraw(
         who: &<T as Config<I>>::AccountId,
         amount: Self::Balance,
