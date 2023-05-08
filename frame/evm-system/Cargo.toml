@@ -2,7 +2,7 @@
 name = "pallet-evm-system"
 version = "1.0.0-dev"
 license = "Apache-2.0"
-description = "FRAME EVM SYSTEM accounts pallet."
+description = "FRAME EVM SYSTEM pallet."
 authors = { workspace = true }
 edition = { workspace = true }
 repository = { workspace = true }
