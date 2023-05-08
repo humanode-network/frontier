@@ -21,9 +21,20 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use sp_runtime::{traits::{One, Zero}, RuntimeDebug};
-use scale_codec::MaxEncodedLen;
+use scale_codec::{Encode, Decode, MaxEncodedLen, FullCodec};
+use scale_info::TypeInfo;
 
 pub use pallet::*;
+
+/// Information of an account.
+#[derive(Clone, Eq, PartialEq, Default, RuntimeDebug, Encode, Decode, TypeInfo, MaxEncodedLen)]
+pub struct AccountInfo<Index, AccountData> {
+	/// The number of transactions this account has sent.
+	pub nonce: Index,
+	/// The additional data that belongs to this account. Used to store the balance(s) in a lot of
+	/// chains.
+	pub data: AccountData,
+}
 
 /// Account creation result status.
 #[derive(Eq, PartialEq, RuntimeDebug)]
@@ -81,6 +92,10 @@ pub mod pallet {
 			+ Copy
 			+ MaxEncodedLen;
 
+		/// Data to be associated with an account (other than nonce/transaction counter, which this
+		/// pallet does regardless).
+		type AccountData: Member + FullCodec + Clone + Default + TypeInfo + MaxEncodedLen;
+
 		/// Handler for when a new account has just been created.
 		type OnNewAccount: OnNewAccount<<Self as Config>::AccountId>;
 
@@ -97,7 +112,7 @@ pub mod pallet {
 		_,
 		Blake2_128Concat,
 		<T as Config>::AccountId,
-		<T as Config>::Index,
+		AccountInfo<<T as Config>::Index, <T as Config>::AccountData>,
 		ValueQuery,
 	>;
 
@@ -126,21 +141,21 @@ impl<T: Config> Pallet<T> {
 
 	/// Retrieve the account transaction counter from storage.
 	pub fn account_nonce(who: &<T as Config>::AccountId) -> <T as Config>::Index {
-		FullAccount::<T>::get(who)
+		FullAccount::<T>::get(who).nonce
 	}
 
 	/// Increment a particular account's nonce by 1.
 	pub fn inc_account_nonce(who: &<T as Config>::AccountId) {
-		FullAccount::<T>::mutate(who, |nonce| *nonce += <T as pallet::Config>::Index::one());
+		FullAccount::<T>::mutate(who, |a| a.nonce += <T as pallet::Config>::Index::one());
 	}
 
 	/// Create an account.
 	pub fn create_account(who: &<T as Config>::AccountId) -> AccountCreationStatus {
-		FullAccount::<T>::mutate(who, |nonce| {
-			if *nonce == Zero::zero() {
+		FullAccount::<T>::mutate(who, |a| {
+			if a.nonce == Zero::zero() {
 				// Account is being created.
 				Self::on_created_account(who.clone());
-				*nonce = One::one();
+				a.nonce = One::one();
 				AccountCreationStatus::Created
 			} else {
 				AccountCreationStatus::Existed
@@ -150,7 +165,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Remove an account.
 	pub fn remove_account(who: &<T as Config>::AccountId) -> AccountRemovingStatus {
-		let nonce = FullAccount::<T>::take(who);
+		let nonce = FullAccount::<T>::take(who).nonce;
 
 		if nonce == Zero::zero() {
 			return AccountRemovingStatus::NotExist;
