@@ -937,6 +937,7 @@ pub trait AccountProvider {
 	fn inc_account_nonce(who: &Self::AccountId);
 }
 
+/// Native system account provider.
 pub struct NativeSystemAccountProvider<T>(sp_std::marker::PhantomData<T>);
 
 impl<T: Config> AccountProvider for NativeSystemAccountProvider<T> {
