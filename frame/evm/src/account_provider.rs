@@ -23,12 +23,20 @@ pub trait AccountProvider {
 	type Index: AtLeast32Bit;
 
 	/// Creates a new account in accounts records.
+	///
+	/// The account associated with new created address EVM.
 	fn create_account(who: &Self::AccountId);
 	/// Removes an account from accounts records.
+	///
+	/// The account associated with removed address from EVM.
 	fn remove_account(who: &Self::AccountId);
 	/// Return current account nonce value.
+	///
+	/// Used to represent account basic information in EVM format.
 	fn account_nonce(who: &Self::AccountId) -> Self::Index;
 	/// Increment a particular account's nonce value.
+	///
+	/// Incremented with each new transaction submitted by the account.
 	fn inc_account_nonce(who: &Self::AccountId);
 }
 
