@@ -947,7 +947,7 @@ pub trait AccountProvider {
 	fn inc_account_nonce(who: &Self::AccountId);
 }
 
-/// Native system account provider.
+/// Native system account provider that `frame_system` provides.
 pub struct NativeSystemAccountProvider<T>(sp_std::marker::PhantomData<T>);
 
 impl<T: Config> AccountProvider for NativeSystemAccountProvider<T> {
