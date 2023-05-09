@@ -929,7 +929,7 @@ pub trait AccountProvider {
 
 	/// Creates a new account.
 	fn create_account(who: &Self::AccountId);
-	/// Removed an account.
+	/// Removes an account.
 	fn remove_account(who: &Self::AccountId);
 	/// Return current account nonce value.
 	fn account_nonce(who: &Self::AccountId) -> Self::Index;
