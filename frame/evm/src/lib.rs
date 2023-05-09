@@ -917,23 +917,33 @@ impl<T> OnCreate<T> for Tuple {
 	}
 }
 
-/// The account provider interface.
+/// The account provider interface abstraction layer.
 ///
-/// Responsible for keeping account data records including their
-/// indexes (the number of previous transactions associated with an account).
+/// Expose account related logic that `pallet_evm` required to control accounts existence
+/// in the network and their transactions uniqueness. By default, the pallet operates native
+/// system accounts records that `frame_system` provides.
+///
+/// The interface allow any custom account provider logic to be used instead of
+/// just using `frame_system` account provider. The accounts records should store nonce value
+/// for each account at least.
 pub trait AccountProvider {
-	/// The user account identifier type.
+	/// The account identifier type.
+	///
+	/// Represent the account itself in accounts records.
 	type AccountId;
 	/// Account index (aka nonce) type.
+	///
+	/// The number that helps to ensure that each transaction in the network is unique
+	/// for particular account.
 	type Index: AtLeast32Bit;
 
-	/// Creates a new account.
+	/// Creates a new account in accounts records.
 	fn create_account(who: &Self::AccountId);
-	/// Removes an account.
+	/// Removes an account from accounts records.
 	fn remove_account(who: &Self::AccountId);
 	/// Return current account nonce value.
 	fn account_nonce(who: &Self::AccountId) -> Self::Index;
-	/// Increment account nonce value.
+	/// Increment a particular account's nonce value.
 	fn inc_account_nonce(who: &Self::AccountId);
 }
 
