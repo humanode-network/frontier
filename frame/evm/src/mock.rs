@@ -132,14 +132,15 @@ parameter_types! {
 	pub MockPrecompiles: MockPrecompileSet = MockPrecompileSet;
 }
 impl crate::Config for Test {
+	type AccountProvider = crate::NativeSystemAccountProvider<Self>;
 	type FeeCalculator = FixedGasPrice;
 	type GasWeightMapping = crate::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
 
 	type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
-	type CallOrigin = EnsureAddressRoot<Self::AccountId>;
+	type CallOrigin = EnsureAddressRoot<<Self::AccountProvider as crate::AccountProvider>::AccountId>;
 
-	type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
+	type WithdrawOrigin = EnsureAddressNever<<Self::AccountProvider as crate::AccountProvider>::AccountId>;
 	type AddressMapping = IdentityAddressMapping;
 	type Currency = Balances;
 
