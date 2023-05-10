@@ -20,6 +20,7 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use frame_support::StorageMap;
 use sp_runtime::{traits::{One, Zero}, RuntimeDebug};
 use scale_codec::{Encode, Decode, MaxEncodedLen, FullCodec};
 use scale_info::TypeInfo;
@@ -159,11 +160,9 @@ impl<T: Config> Pallet<T> {
 			return AccountCreationStatus::Existed;
 		}
 
-		FullAccount::<T>::mutate(who, |_| {
-			// Account is being created.
-			Self::on_created_account(who.clone());
-			AccountCreationStatus::Created
-		})
+		FullAccount::<T>::insert(who.clone(), Default::default());
+		Self::on_created_account(who.clone());
+		AccountCreationStatus::Created
 	}
 
 	/// Remove an account.
