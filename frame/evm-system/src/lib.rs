@@ -127,6 +127,10 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
+	pub fn account_exists(who: &<T as Config>::AccountId) -> bool {
+		FullAccount::<T>::contains_key(who)
+	}
+
 	/// An account is being created.
 	fn on_created_account(who: <T as Config>::AccountId) {
 		<T as Config>::OnNewAccount::on_new_account(&who);
@@ -151,26 +155,24 @@ impl<T: Config> Pallet<T> {
 
 	/// Create an account.
 	pub fn create_account(who: &<T as Config>::AccountId) -> AccountCreationStatus {
-		FullAccount::<T>::mutate(who, |a| {
-			if a.nonce == Zero::zero() {
-				// Account is being created.
-				Self::on_created_account(who.clone());
-				a.nonce = One::one();
-				AccountCreationStatus::Created
-			} else {
-				AccountCreationStatus::Existed
-			}
+		if Self::account_exists(who) {
+			return AccountCreationStatus::Existed;
+		}
+
+		FullAccount::<T>::mutate(who, |_| {
+			// Account is being created.
+			Self::on_created_account(who.clone());
+			AccountCreationStatus::Created
 		})
 	}
 
 	/// Remove an account.
 	pub fn remove_account(who: &<T as Config>::AccountId) -> AccountRemovingStatus {
-		let nonce = FullAccount::<T>::take(who).nonce;
-
-		if nonce == Zero::zero() {
+		if !Self::account_exists(who) {
 			return AccountRemovingStatus::NotExist;
 		}
 
+		FullAccount::<T>::remove(who);
 		Self::on_killed_account(who.clone());
 		AccountRemovingStatus::Removed
 	}
