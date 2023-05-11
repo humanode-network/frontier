@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Test mock for unit tests and benchmarking
+//! Test mock for unit tests and benchmarking.
 
 use frame_support::{
 	traits::{ConstU32, ConstU64},
@@ -81,7 +81,7 @@ impl pallet_evm_system::Config for Test {
 
 /// Build test externalities from the custom genesis.
 /// Using this call requires manual assertions on the genesis init logic.
-pub fn new_test_ext_with() -> sp_io::TestExternalities {
+pub fn new_test_ext() -> sp_io::TestExternalities {
     // Build genesis.
     let config = GenesisConfig {
         ..Default::default()
