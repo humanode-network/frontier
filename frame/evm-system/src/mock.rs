@@ -20,6 +20,7 @@
 use frame_support::{
 	traits::{ConstU32, ConstU64},
 };
+use mockall::mock;
 use sp_core::{H160, H256};
 use sp_runtime::{
 	generic,
@@ -27,7 +28,21 @@ use sp_runtime::{
 };
 use sp_std::{boxed::Box, prelude::*};
 
-use crate::{self as pallet_evm_system};
+use crate::{self as pallet_evm_system, *};
+
+mock! {
+    pub DummyOnNewAccount {}
+	impl OnNewAccount<H160> for DummyOnNewAccount {
+        pub fn on_new_account(who: &H160);
+    }
+}
+
+mock! {
+    pub DummyOnKilledAccount {}
+	impl OnKilledAccount<H160> for DummyOnKilledAccount {
+        pub fn on_killed_account(who: &H160);
+    }
+}
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -75,8 +90,8 @@ impl pallet_evm_system::Config for Test {
 	type AccountId = H160;
 	type Index = u64;
 	type AccountData = ();
-	type OnNewAccount = ();
-	type OnKilledAccount = ();
+	type OnNewAccount = MockDummyOnNewAccount;
+	type OnKilledAccount = MockDummyOnKilledAccount;
 }
 
 /// Build test externalities from the custom genesis.
