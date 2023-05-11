@@ -15,17 +15,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! # EVM System Pallet
+//! # EVM System Pallet.
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_runtime::{traits::One, RuntimeDebug};
+use sp_runtime::{traits::One, RuntimeDebug, DispatchResult};
 use scale_codec::{Encode, Decode, MaxEncodedLen, FullCodec};
 use scale_info::TypeInfo;
 
 #[cfg(test)]
 mod mock;
+#[cfg(test)]
+mod tests;
 
 pub use pallet::*;
 
@@ -37,24 +39,6 @@ pub struct AccountInfo<Index, AccountData> {
 	/// The additional data that belongs to this account. Used to store the balance(s) in a lot of
 	/// chains.
 	pub data: AccountData,
-}
-
-/// Account creation result status.
-#[derive(Eq, PartialEq, RuntimeDebug)]
-pub enum AccountCreationStatus {
-	/// Account was created.
-	Created,
-	/// Account already existed.
-	Existed,
-}
-
-/// Account removing result status.
-#[derive(Eq, PartialEq, RuntimeDebug)]
-pub enum AccountRemovingStatus {
-	/// Account was removed.
-	Removed,
-	/// Account doesn't exist.
-	NotExist,
 }
 
 #[frame_support::pallet]
@@ -127,6 +111,12 @@ pub mod pallet {
 		/// An account was reaped.
 		KilledAccount { account: <T as Config>::AccountId },
 	}
+
+    #[pallet::error]
+    pub enum Error<T> {
+        AccountAlreadyExist,
+		AccountNotExist,
+    }
 }
 
 impl<T: Config> Pallet<T> {
@@ -157,25 +147,25 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Create an account.
-	pub fn create_account(who: &<T as Config>::AccountId) -> AccountCreationStatus {
+	pub fn create_account(who: &<T as Config>::AccountId) -> DispatchResult {
 		if Self::account_exists(who) {
-			return AccountCreationStatus::Existed;
+			return Err(Error::<T>::AccountAlreadyExist.into());
 		}
 
 		FullAccount::<T>::insert(who.clone(), AccountInfo::<_, _>::default());
 		Self::on_created_account(who.clone());
-		AccountCreationStatus::Created
+		Ok(())
 	}
 
 	/// Remove an account.
-	pub fn remove_account(who: &<T as Config>::AccountId) -> AccountRemovingStatus {
+	pub fn remove_account(who: &<T as Config>::AccountId) -> DispatchResult {
 		if !Self::account_exists(who) {
-			return AccountRemovingStatus::NotExist;
+			return Err(Error::<T>::AccountNotExist.into());
 		}
 
 		FullAccount::<T>::remove(who);
 		Self::on_killed_account(who.clone());
-		AccountRemovingStatus::Removed
+		Ok(())
 	}
 }
 
