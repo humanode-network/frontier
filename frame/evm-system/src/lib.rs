@@ -20,10 +20,12 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::StorageMap;
-use sp_runtime::{traits::{One, Zero}, RuntimeDebug};
+use sp_runtime::{traits::One, RuntimeDebug};
 use scale_codec::{Encode, Decode, MaxEncodedLen, FullCodec};
 use scale_info::TypeInfo;
+
+#[cfg(test)]
+mod mock;
 
 pub use pallet::*;
 
@@ -160,7 +162,7 @@ impl<T: Config> Pallet<T> {
 			return AccountCreationStatus::Existed;
 		}
 
-		FullAccount::<T>::insert(who.clone(), Default::default());
+		FullAccount::<T>::insert(who.clone(), AccountInfo::<_, _>::default());
 		Self::on_created_account(who.clone());
 		AccountCreationStatus::Created
 	}
@@ -182,7 +184,15 @@ pub trait OnNewAccount<AccountId> {
 	fn on_new_account(who: &AccountId);
 }
 
+impl<AccountId> OnNewAccount<AccountId> for () {
+	fn on_new_account(_who: &AccountId) {}
+}
+
 pub trait OnKilledAccount<AccountId> {
 	/// The account with the given id was reaped.
 	fn on_killed_account(who: &AccountId);
+}
+
+impl<AccountId> OnKilledAccount<AccountId> for () {
+	fn on_killed_account(_who: &AccountId) {}
 }
