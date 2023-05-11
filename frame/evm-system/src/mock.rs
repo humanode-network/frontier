@@ -31,14 +31,18 @@ use sp_std::{boxed::Box, prelude::*};
 use crate::{self as pallet_evm_system, *};
 
 mock! {
+	#[derive(Debug)]
     pub DummyOnNewAccount {}
+
 	impl OnNewAccount<H160> for DummyOnNewAccount {
         pub fn on_new_account(who: &H160);
     }
 }
 
 mock! {
+	#[derive(Debug)]
     pub DummyOnKilledAccount {}
+
 	impl OnKilledAccount<H160> for DummyOnKilledAccount {
         pub fn on_killed_account(who: &H160);
     }
@@ -106,3 +110,33 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
     // Make test externalities from the storage.
     storage.into()
 }
+
+pub fn runtime_lock() -> std::sync::MutexGuard<'static, ()> {
+    static MOCK_RUNTIME_MUTEX: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    // Ignore the poisoning for the tests that panic.
+    // We only care about concurrency here, not about the poisoning.
+    match MOCK_RUNTIME_MUTEX.lock() {
+        Ok(guard) => guard,
+        Err(poisoned) => poisoned.into_inner(),
+    }
+}
+
+pub trait TestExternalitiesExt {
+    fn execute_with_ext<R, E>(&mut self, execute: E) -> R
+    where
+        E: for<'e> FnOnce(&'e ()) -> R;
+}
+
+impl TestExternalitiesExt for frame_support::sp_io::TestExternalities {
+    fn execute_with_ext<R, E>(&mut self, execute: E) -> R
+    where
+        E: for<'e> FnOnce(&'e ()) -> R,
+    {
+        let guard = runtime_lock();
+        let result = self.execute_with(|| execute(&guard));
+        drop(guard);
+        result
+    }
+}
+
