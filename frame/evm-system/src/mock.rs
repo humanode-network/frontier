@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Test mock for unit tests and benchmarking.
+//! Test mock for unit tests.
 
 use frame_support::{
 	traits::{ConstU32, ConstU64},
@@ -32,20 +32,20 @@ use crate::{self as pallet_evm_system, *};
 
 mock! {
 	#[derive(Debug)]
-    pub DummyOnNewAccount {}
+	pub DummyOnNewAccount {}
 
 	impl OnNewAccount<H160> for DummyOnNewAccount {
-        pub fn on_new_account(who: &H160);
-    }
+		pub fn on_new_account(who: &H160);
+	}
 }
 
 mock! {
 	#[derive(Debug)]
-    pub DummyOnKilledAccount {}
+	pub DummyOnKilledAccount {}
 
 	impl OnKilledAccount<H160> for DummyOnKilledAccount {
-        pub fn on_killed_account(who: &H160);
-    }
+		pub fn on_killed_account(who: &H160);
+	}
 }
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;

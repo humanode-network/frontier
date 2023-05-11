@@ -18,21 +18,25 @@ fn create_account_works() {
 		// Check test preconditions.
 		assert!(!EvmSystem::account_exists(&account_id));
 
+		// Set block number to enable events.
+		System::set_block_number(1);
+
 		// Set mock expectations.
 		let on_new_account_ctx = MockDummyOnNewAccount::on_new_account_context();
 		on_new_account_ctx
-            .expect()
-            .once()
-            .with(
-                predicate::eq(account_id),
-            )
+			.expect()
+			.once()
+			.with(
+				predicate::eq(account_id),
+			)
 			.return_const(());
 
 		// Invoke the function under test.
 		assert_ok!(EvmSystem::create_account(&account_id));
 
 		// Assert state changes.
-        assert!(EvmSystem::account_exists(&account_id));
+		assert!(EvmSystem::account_exists(&account_id));
+		System::assert_has_event(RuntimeEvent::EvmSystem(Event::NewAccount { account: account_id } ));
 
 		// Assert mock invocations.
 		on_new_account_ctx.checkpoint();
@@ -60,9 +64,12 @@ fn remove_account_works() {
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
 		<FullAccount<Test>>::insert(account_id.clone(), AccountInfo::<_, _>::default());
 
+		// Set block number to enable events.
+		System::set_block_number(1);
+
 		// Set mock expectations.
 		let on_killed_account_ctx = MockDummyOnKilledAccount::on_killed_account_context();
-        on_killed_account_ctx
+		on_killed_account_ctx
 			.expect()
 			.once()
 			.with(
@@ -72,6 +79,10 @@ fn remove_account_works() {
 
 		// Invoke the function under test.
 		assert_ok!(EvmSystem::remove_account(&account_id));
+
+		// Assert state changes.
+		assert!(!EvmSystem::account_exists(&account_id));
+		System::assert_has_event(RuntimeEvent::EvmSystem(Event::KilledAccount { account: account_id } ));
 
 		// Assert mock invocations.
 		on_killed_account_ctx.checkpoint();

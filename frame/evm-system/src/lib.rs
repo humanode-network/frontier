@@ -114,12 +114,15 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
+		/// The account already exists in case creating it.
         AccountAlreadyExist,
+		/// The account doesn't exist in case removing it.
 		AccountNotExist,
     }
 }
 
 impl<T: Config> Pallet<T> {
+	/// Check the account existence.
 	pub fn account_exists(who: &<T as Config>::AccountId) -> bool {
 		FullAccount::<T>::contains_key(who)
 	}
@@ -169,11 +172,13 @@ impl<T: Config> Pallet<T> {
 	}
 }
 
+/// Interface to handle account creation.
 pub trait OnNewAccount<AccountId> {
 	/// A new account `who` has been registered.
 	fn on_new_account(who: &AccountId);
 }
 
+/// Interface to handle account killing.
 pub trait OnKilledAccount<AccountId> {
 	/// The account with the given id was reaped.
 	fn on_killed_account(who: &AccountId);
