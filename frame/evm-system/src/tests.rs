@@ -8,6 +8,7 @@ use sp_core::H160;
 
 use crate::{mock::*, *};
 
+/// This test verifies that creating account works in the happy path.
 #[test]
 fn create_account_works() {
     new_test_ext().execute_with_ext(|_| {
@@ -38,6 +39,7 @@ fn create_account_works() {
 	});
 }
 
+/// This test verifies that creating account fails when the account already exists.
 #[test]
 fn create_account_fails() {
     new_test_ext().execute_with(|| {
@@ -50,6 +52,7 @@ fn create_account_fails() {
 	});
 }
 
+/// This test verifies that removing account works in the happy path.
 #[test]
 fn remove_account_works() {
     new_test_ext().execute_with(|| {
@@ -75,6 +78,7 @@ fn remove_account_works() {
 	});
 }
 
+/// This test verifies that removing account fails when the account doesn't exist.
 #[test]
 fn remove_account_fails() {
     new_test_ext().execute_with(|| {
@@ -86,8 +90,9 @@ fn remove_account_fails() {
 	});
 }
 
+/// This test verifies that incrementing account nonce works in the happy path.
 #[test]
-fn nonce_update_works() {
+fn inc_account_nonce_works() {
     new_test_ext().execute_with(|| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
