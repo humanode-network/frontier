@@ -5947,6 +5947,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-evm-system"
+version = "1.0.0-dev"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "mockall",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-evm-test-vector-support"
 version = "1.0.0-dev"
 dependencies = [
