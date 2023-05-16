@@ -772,3 +772,53 @@ where
 		.unwrap_or_else(|_| SignedImbalance::Positive(Self::PositiveImbalance::zero()))
     }
 }
+
+impl<T: Config<I>, I: 'static> fungible::Inspect<<T as Config<I>>::AccountId> for Pallet<T, I> {
+    type Balance = T::Balance;
+
+    fn total_issuance() -> Self::Balance {
+        TotalIssuance::<T, I>::get()
+    }
+
+    fn active_issuance() -> Self::Balance {
+        TotalIssuance::<T, I>::get().saturating_sub(InactiveIssuance::<T, I>::get())
+    }
+
+    fn minimum_balance() -> Self::Balance {
+        T::ExistentialDeposit::get()
+    }
+
+    fn balance(who: &<T as Config<I>>::AccountId) -> Self::Balance {
+        Self::account(who).total()
+    }
+
+    fn reducible_balance(who: &<T as Config<I>>::AccountId, keep_alive: bool) -> Self::Balance {
+        let a = Self::account(who);
+        // Liquid balance is what is neither reserved nor locked/frozen.
+        let liquid = a.free.saturating_sub(a.fee_frozen.max(a.misc_frozen));
+        if !keep_alive {
+            liquid
+        } else {
+            // `must_remain_to_exist` is the part of liquid balance which must remain to keep total
+            // over ED.
+            let must_remain_to_exist =
+                T::ExistentialDeposit::get().saturating_sub(a.total() - liquid);
+            liquid.saturating_sub(must_remain_to_exist)
+        }
+    }
+
+    fn can_deposit(
+        who: &<T as Config<I>>::AccountId,
+        amount: Self::Balance,
+        mint: bool,
+    ) -> DepositConsequence {
+        Self::deposit_consequence(who, amount, &Self::account(who), mint)
+    }
+
+    fn can_withdraw(
+        who: &<T as Config<I>>::AccountId,
+        amount: Self::Balance,
+    ) -> WithdrawConsequence<Self::Balance> {
+        Self::withdraw_consequence(who, amount, &Self::account(who))
+    }
+}
