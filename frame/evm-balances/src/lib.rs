@@ -20,13 +20,17 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::traits::{StorageVersion, OnUnbalanced, StoredMap};
-use sp_runtime::{traits::One, RuntimeDebug, DispatchResult, Saturating};
+use frame_support::traits::{StorageVersion, OnUnbalanced, StoredMap, Imbalance};
+use sp_runtime::{traits::{One, Zero}, RuntimeDebug, DispatchResult, Saturating};
 use scale_codec::{Codec, Encode, Decode, MaxEncodedLen};
 use scale_info::TypeInfo;
+use sp_std::{cmp, fmt::Debug, result};
 
 pub mod account_data;
 use account_data::AccountData;
+
+mod imbalances;
+pub use imbalances::{NegativeImbalance, PositiveImbalance};
 
 #[cfg(test)]
 mod mock;
@@ -90,6 +94,13 @@ pub mod pallet {
         /// Handler for the unbalanced reduction when removing a dust account.
         type DustRemoval: OnUnbalanced<NegativeImbalance<Self, I>>;
 	}
+
+	/// The total units issued.
+    #[pallet::storage]
+    #[pallet::getter(fn total_issuance)]
+    #[pallet::whitelist_storage]
+    pub type TotalIssuance<T: Config<I>, I: 'static = ()> = StorageValue<_, T::Balance, ValueQuery>;
+
 
 	#[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
