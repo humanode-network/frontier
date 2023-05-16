@@ -20,8 +20,9 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use frame_support::traits::{StorageVersion, OnUnbalanced, StoredMap};
 use sp_runtime::{traits::One, RuntimeDebug, DispatchResult, Saturating};
-use scale_codec::{Encode, Decode, MaxEncodedLen, FullCodec};
+use scale_codec::{Codec, Encode, Decode, MaxEncodedLen};
 use scale_info::TypeInfo;
 
 pub mod account_data;
@@ -34,22 +35,28 @@ mod tests;
 
 pub use pallet::*;
 
+/// The current storage version.
+const STORAGE_VERSION: StorageVersion = StorageVersion::new(0);
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
 	use frame_support::pallet_prelude::*;
-	use sp_runtime::traits::{MaybeDisplay, AtLeast32Bit};
+	use sp_runtime::{
+        traits::{AtLeast32BitUnsigned, MaybeDisplay},
+        FixedPointOperand,
+    };
 	use sp_std::fmt::Debug;
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
-	#[pallet::without_storage_info]
-	pub struct Pallet<T>(PhantomData<T>);
+    #[pallet::storage_version(STORAGE_VERSION)]
+    #[pallet::generate_store(pub(super) trait Store)]
+    pub struct Pallet<T, I = ()>(PhantomData<(T, I)>);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config {
+	pub trait Config<I: 'static = ()>: frame_system::Config {
 		/// The overarching event type.
-		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		type RuntimeEvent: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// The user account identifier type.
 		type AccountId: Parameter
@@ -60,23 +67,34 @@ pub mod pallet {
 			+ Ord
 			+ MaxEncodedLen;
 
-		/// Account index (aka nonce) type. This stores the number of previous transactions
-		/// associated with a sender account.
-		type Index: Parameter
-			+ Member
-			+ MaybeSerializeDeserialize
-			+ Debug
-			+ Default
-			+ MaybeDisplay
-			+ AtLeast32Bit
-			+ Copy
-			+ MaxEncodedLen;
+		/// The balance of an account.
+        type Balance: Parameter
+            + Member
+            + AtLeast32BitUnsigned
+            + Codec
+            + Default
+            + Copy
+            + MaybeSerializeDeserialize
+            + Debug
+            + MaxEncodedLen
+            + TypeInfo
+            + FixedPointOperand;
+
+		/// The minimum amount required to keep an account open.
+        #[pallet::constant]
+        type ExistentialDeposit: Get<Self::Balance>;
+
+		/// The means of storing the balances of an account.
+		type AccountStore: StoredMap<<Self as Config<I>>::AccountId, AccountData<Self::Balance>>;
+
+        /// Handler for the unbalanced reduction when removing a dust account.
+        type DustRemoval: OnUnbalanced<NegativeImbalance<Self, I>>;
 	}
 
 	#[pallet::event]
-	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	pub enum Event<T: Config> {}
+    #[pallet::generate_deposit(pub(super) fn deposit_event)]
+    pub enum Event<T: Config<I>, I: 'static = ()> {}
 
     #[pallet::error]
-    pub enum Error<T> {}
+    pub enum Error<T, I = ()> {}
 }
