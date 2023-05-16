@@ -101,11 +101,41 @@ pub mod pallet {
     #[pallet::whitelist_storage]
     pub type TotalIssuance<T: Config<I>, I: 'static = ()> = StorageValue<_, T::Balance, ValueQuery>;
 
+	/// The total units of outstanding deactivated balance.
+    #[pallet::storage]
+    #[pallet::getter(fn inactive_issuance)]
+    #[pallet::whitelist_storage]
+    pub type InactiveIssuance<T: Config<I>, I: 'static = ()> =
+        StorageValue<_, T::Balance, ValueQuery>;
 
 	#[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
-    pub enum Event<T: Config<I>, I: 'static = ()> {}
+    pub enum Event<T: Config<I>, I: 'static = ()> {
+		/// An account was removed whose balance was non-zero but below ExistentialDeposit,
+        /// resulting in an outright loss.
+        DustLost {
+            account: <T as Config<I>>::AccountId,
+            amount: T::Balance,
+        },
+	}
 
     #[pallet::error]
     pub enum Error<T, I = ()> {}
+}
+
+/// Removes a dust account whose balance was non-zero but below `ExistentialDeposit`.
+pub struct DustCleaner<T: Config<I>, I: 'static = ()>(
+    Option<(<T as Config<I>>::AccountId, NegativeImbalance<T, I>)>,
+);
+
+impl<T: Config<I>, I: 'static> Drop for DustCleaner<T, I> {
+    fn drop(&mut self) {
+        if let Some((who, dust)) = self.0.take() {
+            Pallet::<T, I>::deposit_event(Event::DustLost {
+                account: who,
+                amount: dust.peek(),
+            });
+            T::DustRemoval::on_unbalanced(dust);
+        }
+    }
 }
