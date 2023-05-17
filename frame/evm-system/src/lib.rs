@@ -177,8 +177,16 @@ pub trait OnNewAccount<AccountId> {
 	fn on_new_account(who: &AccountId);
 }
 
+impl<AccountId> OnNewAccount<AccountId> for () {
+	fn on_new_account(_who: &AccountId) {}
+}
+
 /// Interface to handle account killing.
 pub trait OnKilledAccount<AccountId> {
 	/// The account with the given id was reaped.
 	fn on_killed_account(who: &AccountId);
+}
+
+impl<AccountId> OnKilledAccount<AccountId> for () {
+	fn on_killed_account(_who: &AccountId) {}
 }
