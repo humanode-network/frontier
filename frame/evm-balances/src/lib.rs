@@ -38,8 +38,8 @@ use scale_codec::{Codec, Encode, Decode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_std::{cmp, fmt::Debug, result};
 
-pub mod account_data;
-use account_data::{AccountData, Reasons};
+mod account_data;
+pub use account_data::{AccountData, Reasons};
 
 mod imbalances;
 pub use imbalances::{NegativeImbalance, PositiveImbalance};
