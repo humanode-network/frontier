@@ -20,7 +20,8 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_runtime::{traits::One, RuntimeDebug, DispatchResult};
+use frame_support::traits::StoredMap;
+use sp_runtime::{traits::One, RuntimeDebug, DispatchResult, DispatchError};
 use scale_codec::{Encode, Decode, MaxEncodedLen, FullCodec};
 use scale_info::TypeInfo;
 
@@ -168,6 +169,28 @@ impl<T: Config> Pallet<T> {
 		FullAccount::<T>::remove(who);
 		Self::on_killed_account(who.clone());
 		Ok(())
+	}
+}
+
+impl<T: Config> StoredMap<<T as Config>::AccountId, <T as Config>::AccountData> for Pallet<T> {
+	fn get(k: &<T as Config>::AccountId) -> <T as Config>::AccountData {
+		FullAccount::<T>::get(k).data
+	}
+
+	fn try_mutate_exists<R, E: From<DispatchError>>(
+		k: &<T as Config>::AccountId,
+		f: impl FnOnce(&mut Option<<T as Config>::AccountData>) -> Result<R, E>,
+	) -> Result<R, E> {
+		let mut maybe_account_data = if Self::account_exists(k) {
+			Some(FullAccount::<T>::get(k).data)
+		} else {
+			None
+		};
+		let r = f(&mut maybe_account_data)?;
+		if let Some(account_data) = maybe_account_data {
+			FullAccount::<T>::mutate(k, |a| a.data = account_data);
+		}
+		Ok(r)
 	}
 }
 
