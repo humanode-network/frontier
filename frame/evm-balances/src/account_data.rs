@@ -13,42 +13,13 @@ pub struct AccountData<Balance> {
 	/// This is the only balance that matters in terms of most operations on tokens. It
 	/// alone is used to determine the balance when in the contract execution environment.
 	pub free: Balance,
-	/// Balance which is reserved and may not be used at all.
-	///
-	/// This can still get slashed, but gets slashed last of all.
-	///
-	/// This balance is a 'reserve' balance that other subsystems use in order to set aside tokens
-	/// that are still 'owned' by the account holder, but which are suspendable.
-	/// This includes named reserve and unnamed reserve.
-	pub reserved: Balance,
-	/// The amount that `free` may not drop below when withdrawing for *anything except transaction
-	/// fee payment*.
-	pub misc_frozen: Balance,
-	/// The amount that `free` may not drop below when withdrawing specifically for transaction
-	/// fee payment.
-	pub fee_frozen: Balance,
 }
 
-impl<Balance: Saturating + Copy + Ord> AccountData<Balance> {
-	/// How much this account's balance can be reduced for the given `reasons`.
-	pub(crate) fn usable(&self, reasons: Reasons) -> Balance {
-		self.free.saturating_sub(self.frozen(reasons))
+impl<Balance: Copy> AccountData<Balance> {
+	/// The total balance in this account.
+	pub(crate) fn total(&self) -> Balance {
+		self.free
 	}
-
-    /// The amount that this account's free balance may not be reduced beyond for the given
-    /// `reasons`.
-    pub(crate) fn frozen(&self, reasons: Reasons) -> Balance {
-        match reasons {
-            Reasons::All => self.misc_frozen.max(self.fee_frozen),
-            Reasons::Misc => self.misc_frozen,
-            Reasons::Fee => self.fee_frozen,
-        }
-    }
-
-    /// The total balance in this account including any that is reserved and ignoring any frozen.
-    pub(crate) fn total(&self) -> Balance {
-        self.free.saturating_add(self.reserved)
-    }
 }
 
 /// Simplified reasons for withdrawing balance.
