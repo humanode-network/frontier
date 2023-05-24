@@ -144,7 +144,6 @@ pub mod pallet {
         BalanceSet {
             who: <T as Config<I>>::AccountId,
             free: T::Balance,
-            reserved: T::Balance,
         },
 		/// Some amount was deposited (e.g. for transaction fees).
         Deposit {
@@ -201,24 +200,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Self::account(who.borrow()).free
 	}
 
-	/// Get the balance of an account that can be used for transfers, reservations, or any other
-	/// non-locking, non-transaction-fee activity. Will be at most `free_balance`.
-	pub fn usable_balance(who: impl sp_std::borrow::Borrow<<T as Config<I>>::AccountId>) -> T::Balance {
-		Self::account(who.borrow()).usable(Reasons::Misc)
-	}
-
-	/// Get the balance of an account that can be used for paying transaction fees (not tipping,
-	/// or any other kind of fees, though). Will be at most `free_balance`.
-	pub fn usable_balance_for_fees(who: impl sp_std::borrow::Borrow<<T as Config<I>>::AccountId>) -> T::Balance {
-		Self::account(who.borrow()).usable(Reasons::Fee)
-	}
-
-	/// Get the reserved balance of an account.
-	pub fn reserved_balance(who: impl sp_std::borrow::Borrow<<T as Config<I>>::AccountId>) -> T::Balance {
-		Self::account(who.borrow()).reserved
-	}
-
-    /// Get all balance information for an account.
+    /// Get all data information for an account.
     fn account(who: &<T as Config<I>>::AccountId) -> AccountData<T::Balance> {
         T::AccountStore::get(who)
     }
@@ -363,21 +345,12 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         if new_total_balance < ed {
             return WithdrawConsequence::WouldDie;
         }
-		let success = WithdrawConsequence::Success;
 
         // Enough free funds to have them be reduced.
-        let new_free_balance = match account.free.checked_sub(&amount) {
-            Some(b) => b,
-            None => return WithdrawConsequence::NoFunds,
-        };
-
-        // Eventual free funds must be no less than the frozen balance.
-        let min_balance = account.frozen(Reasons::All);
-        if new_free_balance < min_balance {
-            return WithdrawConsequence::Frozen;
+        match account.free.checked_sub(&amount) {
+            Some(_) => WithdrawConsequence::Success,
+            None => WithdrawConsequence::NoFunds,
         }
-
-        success
     }
 }
 
@@ -393,7 +366,6 @@ where
         Self::account(who).total()
     }
 
-    // Check if `value` amount of free balance can be slashed from `who`.
     fn can_slash(who: &<T as Config<I>>::AccountId, value: Self::Balance) -> bool {
         if value.is_zero() {
             return true;
@@ -421,8 +393,6 @@ where
         T::ExistentialDeposit::get()
     }
 
-    // Burn funds from the total issuance, returning a positive imbalance for the amount burned.
-    // Is a no-op if amount to be burned is zero.
     fn burn(mut amount: Self::Balance) -> Self::PositiveImbalance {
         if amount.is_zero() {
             return PositiveImbalance::zero();
@@ -436,9 +406,6 @@ where
         PositiveImbalance::new(amount)
     }
 
-    // Create new funds into the total issuance, returning a negative imbalance
-    // for the amount issued.
-    // Is a no-op if amount to be issued it zero.
     fn issue(mut amount: Self::Balance) -> Self::NegativeImbalance {
         if amount.is_zero() {
             return NegativeImbalance::zero();
@@ -456,33 +423,16 @@ where
         Self::account(who).free
     }
 
-    // Ensure that an account can withdraw from their free balance given any existing withdrawal
-    // restrictions like locks and vesting balance.
-    // Is a no-op if amount to be withdrawn is zero.
-    //
-    // # <weight>
-    // Despite iterating over a list of locks, they are limited by the number of
-    // lock IDs, which means the number of runtime pallets that intend to use and create locks.
-    // # </weight>
+	// We don't have any existing withdrawal restrictions like locks and vesting balance.
     fn ensure_can_withdraw(
-        who: &<T as Config<I>>::AccountId,
-        amount: T::Balance,
-        reasons: WithdrawReasons,
-        new_balance: T::Balance,
+        _who: &<T as Config<I>>::AccountId,
+        _amount: T::Balance,
+        _reasons: WithdrawReasons,
+        _new_balance: T::Balance,
     ) -> DispatchResult {
-        if amount.is_zero() {
-            return Ok(());
-        }
-        let min_balance = Self::account(who).frozen(reasons.into());
-        ensure!(
-            new_balance >= min_balance,
-            Error::<T, I>::LiquidityRestrictions
-        );
         Ok(())
     }
 
-    // Transfer some free balance from `transactor` to `dest`, respecting existence requirements.
-    // Is a no-op if value to be transferred is zero or the `transactor` is the same as `dest`.
     fn transfer(
         transactor: &<T as Config<I>>::AccountId,
         dest: &<T as Config<I>>::AccountId,
@@ -581,31 +531,18 @@ where
 						// If acting as a critical provider (i.e. first attempt failed), then slash
 						// as much as possible while leaving at least at ED.
 						_ => value.min(
-							(account.free + account.reserved)
+							account.free
 								.saturating_sub(T::ExistentialDeposit::get()),
 						),
 					};
 
 					let free_slash = cmp::min(account.free, best_value);
 					account.free -= free_slash; // Safe because of above check
-					let remaining_slash = best_value - free_slash; // Safe because of above check
 
-					if !remaining_slash.is_zero() {
-						// If we have remaining slash, take it from reserved balance.
-						let reserved_slash = cmp::min(account.reserved, remaining_slash);
-						account.reserved -= reserved_slash; // Safe because of above check
-						Ok((
-							NegativeImbalance::new(free_slash + reserved_slash),
-							value - free_slash - reserved_slash, /* Safe because value is gt or
-							                                      * eq total slashed */
-						))
-					} else {
-						// Else we are done!
-						Ok((
-							NegativeImbalance::new(free_slash),
-							value - free_slash, // Safe because value is gt or eq to total slashed
-						))
-					}
+					Ok((
+						NegativeImbalance::new(free_slash),
+						value - free_slash, // Safe because value is gt or eq to total slashed
+					))
 				},
 			) {
 				Ok((imbalance, not_slashed)) => {
@@ -714,8 +651,8 @@ where
 
                 // bail if we need to keep the account alive and this would kill it.
                 let ed = T::ExistentialDeposit::get();
-                let would_be_dead = new_free_account + account.reserved < ed;
-                let would_kill = would_be_dead && account.free + account.reserved >= ed;
+                let would_be_dead = new_free_account < ed;
+                let would_kill = would_be_dead && account.free >= ed;
                 ensure!(
                     liveness == AllowDeath || !would_kill,
                     Error::<T, I>::KeepAlive
@@ -745,7 +682,7 @@ where
 			 is_new|
 			 -> Result<SignedImbalance<Self::Balance, Self::PositiveImbalance>, DispatchError> {
 				let ed = T::ExistentialDeposit::get();
-				let total = value.saturating_add(account.reserved);
+				let total = value;
 				// If we're attempting to set an existing account to less than ED, then
 				// bypass the entire operation. It's a no-op if you follow it through, but
 				// since this is an instance where we might account for a negative imbalance
@@ -764,7 +701,6 @@ where
 				Self::deposit_event(Event::BalanceSet {
 					who: who.clone(),
 					free: account.free,
-					reserved: account.reserved,
 				});
 				Ok(imbalance)
 			},
@@ -795,7 +731,7 @@ impl<T: Config<I>, I: 'static> fungible::Inspect<<T as Config<I>>::AccountId> fo
     fn reducible_balance(who: &<T as Config<I>>::AccountId, keep_alive: bool) -> Self::Balance {
         let a = Self::account(who);
         // Liquid balance is what is neither reserved nor locked/frozen.
-        let liquid = a.free.saturating_sub(a.fee_frozen.max(a.misc_frozen));
+        let liquid = a.free;
         if !keep_alive {
             liquid
         } else {
