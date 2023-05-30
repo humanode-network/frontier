@@ -101,7 +101,7 @@ impl pallet_evm_balances::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type AccountId = H160;
 	type Balance = u64;
-	type ExistentialDeposit = ConstU64<500>;
+	type ExistentialDeposit = ConstU64<1>;
 	type AccountStore = EvmSystem;
 	type DustRemoval = ();
 }
