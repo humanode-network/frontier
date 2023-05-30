@@ -426,7 +426,7 @@ where
 		Self::account(who).free
 	}
 
-	// We don't have any existing withdrawal restrictions like locks and vesting balance.
+	// We don't have any existing withdrawal restrictions like locked and reserved balance.
 	fn ensure_can_withdraw(
 		_who: &<T as Config<I>>::AccountId,
 		_amount: T::Balance,
