@@ -4842,10 +4842,13 @@ dependencies = [
 name = "pallet-evm-balances"
 version = "1.0.0-dev"
 dependencies = [
+ "fp-evm",
  "frame-support",
  "frame-system",
  "log",
- "mockall",
+ "pallet-evm",
+ "pallet-evm-system",
+ "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
