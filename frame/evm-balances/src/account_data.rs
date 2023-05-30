@@ -25,22 +25,22 @@ impl<Balance: Copy> AccountData<Balance> {
 /// Simplified reasons for withdrawing balance.
 #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub enum Reasons {
-    /// Paying system transaction fees.
-    Fee = 0,
-    /// Any reason other than paying system transaction fees.
-    Misc = 1,
-    /// Any reason at all.
-    All = 2,
+	/// Paying system transaction fees.
+	Fee = 0,
+	/// Any reason other than paying system transaction fees.
+	Misc = 1,
+	/// Any reason at all.
+	All = 2,
 }
 
 impl From<WithdrawReasons> for Reasons {
-    fn from(r: WithdrawReasons) -> Reasons {
-        if r == WithdrawReasons::TRANSACTION_PAYMENT {
-            Reasons::Fee
-        } else if r.contains(WithdrawReasons::TRANSACTION_PAYMENT) {
-            Reasons::All
-        } else {
-            Reasons::Misc
-        }
-    }
+	fn from(r: WithdrawReasons) -> Reasons {
+		if r == WithdrawReasons::TRANSACTION_PAYMENT {
+			Reasons::Fee
+		} else if r.contains(WithdrawReasons::TRANSACTION_PAYMENT) {
+			Reasons::All
+		} else {
+			Reasons::Misc
+		}
+	}
 }
