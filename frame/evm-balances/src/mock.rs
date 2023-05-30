@@ -37,6 +37,14 @@ use crate::{self as pallet_evm_balances, *};
 
 pub(crate) const INIT_BALANCE: u64 = 10_000_000;
 
+pub(crate) fn alice() -> H160 {
+	H160::from_str("1000000000000000000000000000000000000000").unwrap()
+}
+
+pub(crate) fn bob() -> H160 {
+	H160::from_str("2000000000000000000000000000000000000000").unwrap()
+}
+
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
@@ -193,14 +201,8 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 					nonce: Default::default(),
 					storage: Default::default(),
 				};
-				map.insert(
-					H160::from_str("1000000000000000000000000000000000000000").unwrap(),
-					init_genesis_account.clone(),
-				);
-				map.insert(
-					H160::from_str("2000000000000000000000000000000000000000").unwrap(),
-					init_genesis_account,
-				);
+				map.insert(alice(), init_genesis_account.clone());
+				map.insert(bob(), init_genesis_account);
 				map
 			},
 		},
