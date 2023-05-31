@@ -120,3 +120,39 @@ fn refunds_should_work() {
 		assert_eq!(after_call, before_call - total_cost);
 	});
 }
+
+#[test]
+fn refunds_and_priority_should_work() {
+	new_test_ext().execute_with(|| {
+		let before_call = EVM::account_basic(&alice()).0.balance;
+		// We deliberately set a base fee + max tip > max fee.
+		// The effective priority tip will be 1GWEI instead 1.5GWEI:
+		// 		(max_fee_per_gas - base_fee).min(max_priority_fee)
+		//		(2 - 1).min(1.5)
+		let tip = U256::from(1_500_000_000);
+		let max_fee_per_gas = U256::from(2_000_000_000);
+		let used_gas = U256::from(21_000);
+
+		let _ = <Test as pallet_evm::Config>::Runner::call(
+			alice(),
+			bob(),
+			Vec::new(),
+			U256::from(1),
+			1000000,
+			Some(max_fee_per_gas),
+			Some(tip),
+			None,
+			Vec::new(),
+			true,
+			true,
+			<Test as pallet_evm::Config>::config(),
+		);
+
+		let (base_fee, _) = <Test as pallet_evm::Config>::FeeCalculator::min_gas_price();
+		let actual_tip = (max_fee_per_gas - base_fee).min(tip) * used_gas;
+		let total_cost = (used_gas * base_fee) + U256::from(actual_tip) + U256::from(1);
+		let after_call = EVM::account_basic(&alice()).0.balance;
+		// The tip is deducted but never refunded to the caller.
+		assert_eq!(after_call, before_call - total_cost);
+	});
+}
