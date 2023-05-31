@@ -35,7 +35,7 @@ use sp_std::{boxed::Box, prelude::*, str::FromStr};
 
 use crate::{self as pallet_evm_balances, *};
 
-pub(crate) const INIT_BALANCE: u64 = 10_000_000;
+pub(crate) const INIT_BALANCE: u64 = 10_000_000_000_000_000;
 
 pub(crate) fn alice() -> H160 {
 	H160::from_str("1000000000000000000000000000000000000000").unwrap()
