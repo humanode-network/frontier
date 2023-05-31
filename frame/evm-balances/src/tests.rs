@@ -1,6 +1,6 @@
 //! Unit tests.
 
-use frame_support::{assert_noop, assert_ok};
+use frame_support::assert_ok;
 use pallet_evm::{FeeCalculator, Runner};
 use sp_core::{H160, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
