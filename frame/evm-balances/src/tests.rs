@@ -89,3 +89,34 @@ fn issuance_after_tip() {
 		assert_eq!(after_tip, (before_tip - (base_fee * 21_000)));
 	});
 }
+
+#[test]
+fn refunds_should_work() {
+	new_test_ext().execute_with(|| {
+		let before_call = EVM::account_basic(&alice()).0.balance;
+		// Gas price is not part of the actual fee calculations anymore, only the base fee.
+		//
+		// Because we first deduct max_fee_per_gas * gas_limit (2_000_000_000 * 1000000) we need
+		// to ensure that the difference (max fee VS base fee) is refunded.
+
+		let _ = <Test as pallet_evm::Config>::Runner::call(
+			alice(),
+			bob(),
+			Vec::new(),
+			U256::from(1),
+			1000000,
+			Some(U256::from(2_000_000_000)),
+			None,
+			None,
+			Vec::new(),
+			true,
+			true,
+			<Test as pallet_evm::Config>::config(),
+		);
+
+		let (base_fee, _) = <Test as pallet_evm::Config>::FeeCalculator::min_gas_price();
+		let total_cost = (U256::from(21_000) * base_fee) + U256::from(1);
+		let after_call = EVM::account_basic(&alice()).0.balance;
+		assert_eq!(after_call, before_call - total_cost);
+	});
+}
