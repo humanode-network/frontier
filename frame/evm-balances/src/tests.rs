@@ -173,3 +173,27 @@ fn call_should_fail_with_priority_greater_than_max_fee() {
 		assert_eq!(result.unwrap_err().weight, Weight::from_ref_time(7));
 	});
 }
+
+#[test]
+fn call_should_succeed_with_priority_equal_to_max_fee() {
+	new_test_ext().execute_with(|| {
+		let tip: u128 = 1_000_000_000;
+		// Mimics the input for pre-eip-1559 transaction types where `gas_price`
+		// is used for both `max_fee_per_gas` and `max_priority_fee_per_gas`.
+		let result = <Test as pallet_evm::Config>::Runner::call(
+			alice(),
+			bob(),
+			Vec::new(),
+			U256::from(1),
+			1000000,
+			Some(U256::from(1_000_000_000)),
+			Some(U256::from(tip)),
+			None,
+			Vec::new(),
+			true,
+			true,
+			<Test as pallet_evm::Config>::config(),
+		);
+		assert!(result.is_ok());
+	});
+}
