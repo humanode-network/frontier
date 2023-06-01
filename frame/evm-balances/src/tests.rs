@@ -55,9 +55,6 @@ fn issuance_after_tip() {
 	new_test_ext().execute_with(|| {
 		let before_tip = <Test as pallet_evm::Config>::Currency::total_issuance();
 
-		// Set block number to enable events.
-		System::set_block_number(1);
-
 		assert_ok!(<Test as pallet_evm::Config>::Runner::call(
 			alice(),
 			bob(),
