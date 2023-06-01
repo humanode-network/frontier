@@ -1,6 +1,6 @@
 //! Unit tests.
 
-use frame_support::assert_ok;
+use frame_support::{assert_ok, weights::Weight};
 use pallet_evm::{FeeCalculator, Runner};
 use sp_core::{H160, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
@@ -145,5 +145,31 @@ fn refunds_and_priority_should_work() {
 		let after_call = EVM::account_basic(&alice()).0.balance;
 		// The tip is deducted but never refunded to the caller.
 		assert_eq!(after_call, before_call - total_cost);
+	});
+}
+
+#[test]
+fn call_should_fail_with_priority_greater_than_max_fee() {
+	new_test_ext().execute_with(|| {
+		// Max priority greater than max fee should fail.
+		let tip: u128 = 1_100_000_000;
+
+		let result = <Test as pallet_evm::Config>::Runner::call(
+			alice(),
+			bob(),
+			Vec::new(),
+			U256::from(1),
+			1000000,
+			Some(U256::from(1_000_000_000)),
+			Some(U256::from(tip)),
+			None,
+			Vec::new(),
+			true,
+			true,
+			<Test as pallet_evm::Config>::config(),
+		);
+		assert!(result.is_err());
+		// Some used weight is returned as part of the error.
+		assert_eq!(result.unwrap_err().weight, Weight::from_ref_time(7));
 	});
 }
