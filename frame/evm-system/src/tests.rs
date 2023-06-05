@@ -1,6 +1,6 @@
 //! Unit tests.
 
-use core::str::FromStr;
+use sp_std::str::FromStr;
 
 use frame_support::{assert_ok, assert_noop};
 use mockall::predicate;
