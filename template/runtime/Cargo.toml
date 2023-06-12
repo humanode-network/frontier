@@ -51,10 +51,12 @@ pallet-base-fee = { workspace = true }
 pallet-dynamic-fee = { workspace = true }
 pallet-ethereum = { workspace = true }
 pallet-evm = { workspace = true }
+pallet-evm-balances = { workspace = true }
 pallet-evm-chain-id = { workspace = true }
 pallet-evm-precompile-modexp = { workspace = true }
 pallet-evm-precompile-sha3fips = { workspace = true }
 pallet-evm-precompile-simple = { workspace = true }
+pallet-evm-system = { workspace = true }
 pallet-hotfix-sufficients = { workspace = true }
 
 [build-dependencies]
@@ -103,10 +105,12 @@ std = [
 	"pallet-dynamic-fee/std",
 	"pallet-ethereum/std",
 	"pallet-evm/std",
+	"pallet-evm-balances/std",
 	"pallet-evm-chain-id/std",
 	"pallet-evm-precompile-modexp/std",
 	"pallet-evm-precompile-sha3fips/std",
 	"pallet-evm-precompile-simple/std",
+	"pallet-evm-system/std",
 	"pallet-hotfix-sufficients/std",
 ]
 runtime-benchmarks = [

@@ -34,7 +34,7 @@ use frame_support::weights::constants::ParityDbWeight as RuntimeDbWeight;
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{ConstU32, ConstU8, FindAuthor, KeyOwnerProofSystem, OnTimestampSet},
+	traits::{ConstU128, ConstU32, ConstU8, FindAuthor, KeyOwnerProofSystem, OnTimestampSet},
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, ConstantMultiplier, IdentityFee, Weight},
 };
 use pallet_grandpa::{
@@ -317,6 +317,47 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
 	}
 }
 
+impl pallet_evm_system::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type AccountId = H160;
+	type Index = Index;
+	type AccountData = pallet_evm_balances::AccountData<Balance>;
+	type OnNewAccount = ();
+	type OnKilledAccount = ();
+}
+
+impl pallet_evm_balances::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type AccountId = H160;
+	type Balance = Balance;
+	type ExistentialDeposit = ConstU128<500>;
+	type AccountStore = EvmSystem;
+	type DustRemoval = ();
+}
+
+pub struct EvmAccountProvider;
+
+impl pallet_evm::AccountProvider for EvmAccountProvider {
+	type AccountId = H160;
+	type Index = Index;
+
+	fn create_account(who: &Self::AccountId) {
+		let _ = EvmSystem::create_account(who);
+	}
+
+	fn remove_account(who: &Self::AccountId) {
+		let _ = EvmSystem::remove_account(who);
+	}
+
+	fn account_nonce(who: &Self::AccountId) -> Self::Index {
+		EvmSystem::account_nonce(who)
+	}
+
+	fn inc_account_nonce(who: &Self::AccountId) {
+		EvmSystem::inc_account_nonce(who);
+	}
+}
+
 const BLOCK_GAS_LIMIT: u64 = 75_000_000;
 
 parameter_types! {
@@ -326,15 +367,15 @@ parameter_types! {
 }
 
 impl pallet_evm::Config for Runtime {
-	type AccountProvider = pallet_evm::NativeSystemAccountProvider<Self>;
+	type AccountProvider = EvmAccountProvider;
 	type FeeCalculator = BaseFee;
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
 	type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
-	type CallOrigin = EnsureAddressTruncated;
-	type WithdrawOrigin = EnsureAddressTruncated;
-	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
-	type Currency = Balances;
+	type CallOrigin = pallet_evm::EnsureAddressNever<H160>;
+	type WithdrawOrigin = pallet_evm::EnsureAddressNever<H160>;
+	type AddressMapping = pallet_evm::IdentityAddressMapping;
+	type Currency = EvmBalances;
 	type RuntimeEvent = RuntimeEvent;
 	type PrecompilesType = FrontierPrecompiles<Self>;
 	type PrecompilesValue = PrecompilesValue;
@@ -414,6 +455,8 @@ construct_runtime!(
 		DynamicFee: pallet_dynamic_fee,
 		BaseFee: pallet_base_fee,
 		HotfixSufficients: pallet_hotfix_sufficients,
+		EvmSystem: pallet_evm_system,
+		EvmBalances: pallet_evm_balances,
 	}
 );
 
