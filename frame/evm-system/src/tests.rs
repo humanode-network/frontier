@@ -49,7 +49,7 @@ fn create_account_fails() {
 	new_test_ext().execute_with(|| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
-		<FullAccount<Test>>::insert(account_id.clone(), AccountInfo::<_, _>::default());
+		<Account<Test>>::insert(account_id.clone(), AccountInfo::<_, _>::default());
 
 		// Invoke the function under test.
 		assert_noop!(
@@ -65,7 +65,7 @@ fn remove_account_works() {
 	new_test_ext().execute_with(|| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
-		<FullAccount<Test>>::insert(account_id.clone(), AccountInfo::<_, _>::default());
+		<Account<Test>>::insert(account_id.clone(), AccountInfo::<_, _>::default());
 
 		// Set block number to enable events.
 		System::set_block_number(1);
