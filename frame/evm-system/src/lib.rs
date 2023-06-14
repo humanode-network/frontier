@@ -95,7 +95,7 @@ pub mod pallet {
 	/// The full account information for a particular account ID.
 	#[pallet::storage]
 	#[pallet::getter(fn full_account)]
-	pub type FullAccount<T: Config> = StorageMap<
+	pub type Account<T: Config> = StorageMap<
 		_,
 		Blake2_128Concat,
 		<T as Config>::AccountId,
@@ -124,7 +124,7 @@ pub mod pallet {
 impl<T: Config> Pallet<T> {
 	/// Check the account existence.
 	pub fn account_exists(who: &<T as Config>::AccountId) -> bool {
-		FullAccount::<T>::contains_key(who)
+		Account::<T>::contains_key(who)
 	}
 
 	/// An account is being created.
@@ -141,12 +141,12 @@ impl<T: Config> Pallet<T> {
 
 	/// Retrieve the account transaction counter from storage.
 	pub fn account_nonce(who: &<T as Config>::AccountId) -> <T as Config>::Nonce {
-		FullAccount::<T>::get(who).nonce
+		Account::<T>::get(who).nonce
 	}
 
 	/// Increment a particular account's nonce by 1.
 	pub fn inc_account_nonce(who: &<T as Config>::AccountId) {
-		FullAccount::<T>::mutate(who, |a| a.nonce += <T as pallet::Config>::Nonce::one());
+		Account::<T>::mutate(who, |a| a.nonce += <T as pallet::Config>::Nonce::one());
 	}
 
 	/// Create an account.
@@ -155,7 +155,7 @@ impl<T: Config> Pallet<T> {
 			return Err(Error::<T>::AccountAlreadyExist.into());
 		}
 
-		FullAccount::<T>::insert(who.clone(), AccountInfo::<_, _>::default());
+		Account::<T>::insert(who.clone(), AccountInfo::<_, _>::default());
 		Self::on_created_account(who.clone());
 		Ok(())
 	}
@@ -166,7 +166,7 @@ impl<T: Config> Pallet<T> {
 			return Err(Error::<T>::AccountNotExist.into());
 		}
 
-		FullAccount::<T>::remove(who);
+		Account::<T>::remove(who);
 		Self::on_killed_account(who.clone());
 		Ok(())
 	}
@@ -174,7 +174,7 @@ impl<T: Config> Pallet<T> {
 
 impl<T: Config> StoredMap<<T as Config>::AccountId, <T as Config>::AccountData> for Pallet<T> {
 	fn get(k: &<T as Config>::AccountId) -> <T as Config>::AccountData {
-		FullAccount::<T>::get(k).data
+		Account::<T>::get(k).data
 	}
 
 	fn try_mutate_exists<R, E: From<DispatchError>>(
@@ -182,13 +182,13 @@ impl<T: Config> StoredMap<<T as Config>::AccountId, <T as Config>::AccountData> 
 		f: impl FnOnce(&mut Option<<T as Config>::AccountData>) -> Result<R, E>,
 	) -> Result<R, E> {
 		let mut maybe_account_data = if Self::account_exists(k) {
-			Some(FullAccount::<T>::get(k).data)
+			Some(Account::<T>::get(k).data)
 		} else {
 			None
 		};
 		let r = f(&mut maybe_account_data)?;
 		if let Some(account_data) = maybe_account_data {
-			FullAccount::<T>::mutate(k, |a| a.data = account_data);
+			Account::<T>::mutate(k, |a| a.data = account_data);
 		}
 		Ok(r)
 	}
