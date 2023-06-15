@@ -125,6 +125,8 @@ fn inc_account_nonce_works() {
 	});
 }
 
+/// This test verifies that try_mutate_exists works as expected in case data wasn't providing
+/// and returned data is `Some`. As a result, a new account has been created.
 #[test]
 fn try_mutate_exists_account_created() {
 	new_test_ext().execute_with(|| {
@@ -164,6 +166,8 @@ fn try_mutate_exists_account_created() {
 	});
 }
 
+/// This test verifies that try_mutate_exists works as expected in case data was providing
+/// and returned data is `Some`. As a result, the account has been updated.
 #[test]
 fn try_mutate_exists_account_updated() {
 	new_test_ext().execute_with(|| {
@@ -194,6 +198,8 @@ fn try_mutate_exists_account_updated() {
 	});
 }
 
+/// This test verifies that try_mutate_exists works as expected in case data was providing
+/// and returned data is `None`. As a result, the account has been removed.
 #[test]
 fn try_mutate_exists_account_removed() {
 	new_test_ext().execute_with(|| {
@@ -235,6 +241,8 @@ fn try_mutate_exists_account_removed() {
 	});
 }
 
+/// This test verifies that try_mutate_exists works as expected in case getting error
+/// during data mutation.
 #[test]
 fn try_mutate_exists_fails_without_changes() {
 	new_test_ext().execute_with(|| {
