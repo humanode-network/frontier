@@ -182,16 +182,30 @@ impl<T: Config> StoredMap<<T as Config>::AccountId, <T as Config>::AccountData> 
 		k: &<T as Config>::AccountId,
 		f: impl FnOnce(&mut Option<<T as Config>::AccountData>) -> Result<R, E>,
 	) -> Result<R, E> {
-		let mut maybe_account_data = if Self::account_exists(k) {
-			Some(Account::<T>::get(k).data)
+		let (mut some_data, was_providing) = if Self::account_exists(k) {
+			(Some(Account::<T>::get(k).data), true)
 		} else {
-			None
+			(None, false)
 		};
-		let r = f(&mut maybe_account_data)?;
-		if let Some(account_data) = maybe_account_data {
-			Account::<T>::mutate(k, |a| a.data = account_data);
+
+		let result = f(&mut some_data)?;
+
+		match (some_data, was_providing) {
+			(Some(data), false) => {
+				Account::<T>::mutate(k, |a| a.data = data);
+				Self::on_created_account(k.clone());
+			}
+			(Some(data), true) => {
+				Account::<T>::mutate(k, |a| a.data = data);
+			}
+			(None, true) => {
+				Account::<T>::remove(k);
+				Self::on_killed_account(k.clone());
+			}
+			_ => {}
 		}
-		Ok(r)
+
+		Ok(result)
 	}
 }
 
