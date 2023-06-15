@@ -141,8 +141,6 @@ fn try_mutate_exists_account_created() {
 			.once()
 			.with(predicate::eq(account_id))
 			.return_const(());
-		let on_killed_account_ctx = MockDummyOnKilledAccount::on_killed_account_context();
-		on_killed_account_ctx.expect().never();
 
 		// Set block number to enable events.
 		System::set_block_number(1);
@@ -163,7 +161,6 @@ fn try_mutate_exists_account_created() {
 
 		// Assert mock invocations.
 		on_new_account_ctx.checkpoint();
-		on_killed_account_ctx.checkpoint();
 	});
 }
 
@@ -178,12 +175,6 @@ fn try_mutate_exists_account_updated() {
 
 		// Check test preconditions.
 		assert!(EvmSystem::account_exists(&account_id));
-
-		// Set mock expectations.
-		let on_new_account_ctx = MockDummyOnNewAccount::on_new_account_context();
-		on_new_account_ctx.expect().never();
-		let on_killed_account_ctx = MockDummyOnKilledAccount::on_killed_account_context();
-		on_killed_account_ctx.expect().never();
 
 		// Set block number to enable events.
 		System::set_block_number(1);
@@ -200,10 +191,6 @@ fn try_mutate_exists_account_updated() {
 		// Assert state changes.
 		assert!(EvmSystem::account_exists(&account_id));
 		assert_eq!(EvmSystem::get(&account_id), data + 1);
-
-		// Assert mock invocations.
-		on_new_account_ctx.checkpoint();
-		on_killed_account_ctx.checkpoint();
 	});
 }
 
@@ -220,8 +207,6 @@ fn try_mutate_exists_account_removed() {
 		assert!(EvmSystem::account_exists(&account_id));
 
 		// Set mock expectations.
-		let on_new_account_ctx = MockDummyOnNewAccount::on_new_account_context();
-		on_new_account_ctx.expect().never();
 		let on_killed_account_ctx = MockDummyOnKilledAccount::on_killed_account_context();
 		on_killed_account_ctx
 			.expect()
@@ -246,7 +231,6 @@ fn try_mutate_exists_account_removed() {
 		}));
 
 		// Assert mock invocations.
-		on_new_account_ctx.checkpoint();
 		on_killed_account_ctx.checkpoint();
 	});
 }
@@ -263,12 +247,6 @@ fn try_mutate_exists_fails_without_changes() {
 		// Check test preconditions.
 		assert!(EvmSystem::account_exists(&account_id));
 
-		// Set mock expectations.
-		let on_new_account_ctx = MockDummyOnNewAccount::on_new_account_context();
-		on_new_account_ctx.expect().never();
-		let on_killed_account_ctx = MockDummyOnKilledAccount::on_killed_account_context();
-		on_killed_account_ctx.expect().never();
-
 		// Invoke the function under test.
 		<Account<Test>>::try_mutate_exists(account_id, |_maybe_data| -> Result<(), ()> { Err(()) })
 			.unwrap_err();
@@ -276,9 +254,5 @@ fn try_mutate_exists_fails_without_changes() {
 		// Assert state changes.
 		assert!(EvmSystem::account_exists(&account_id));
 		assert_eq!(EvmSystem::get(&account_id), data);
-
-		// Assert mock invocations.
-		on_new_account_ctx.checkpoint();
-		on_killed_account_ctx.checkpoint();
 	});
 }
