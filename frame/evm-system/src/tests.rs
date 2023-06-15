@@ -124,3 +124,161 @@ fn inc_account_nonce_works() {
 		assert_eq!(EvmSystem::account_nonce(&account_id), nonce_before + 1);
 	});
 }
+
+#[test]
+fn try_mutate_exists_account_created() {
+	new_test_ext().execute_with(|| {
+		// Prepare test data.
+		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
+
+		// Check test preconditions.
+		assert!(!EvmSystem::account_exists(&account_id));
+
+		// Set mock expectations.
+		let on_new_account_ctx = MockDummyOnNewAccount::on_new_account_context();
+		on_new_account_ctx
+			.expect()
+			.once()
+			.with(predicate::eq(account_id))
+			.return_const(());
+		let on_killed_account_ctx = MockDummyOnKilledAccount::on_killed_account_context();
+		on_killed_account_ctx.expect().never();
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		// Invoke the function under test.
+		EvmSystem::try_mutate_exists(&account_id, |maybe_data| -> Result<(), DispatchError> {
+			*maybe_data = Some(1);
+			Ok(())
+		})
+		.unwrap();
+
+		// Assert state changes.
+		assert!(EvmSystem::account_exists(&account_id));
+		assert_eq!(EvmSystem::get(&account_id), 1);
+		System::assert_has_event(RuntimeEvent::EvmSystem(Event::NewAccount {
+			account: account_id,
+		}));
+
+		// Assert mock invocations.
+		on_new_account_ctx.checkpoint();
+		on_killed_account_ctx.checkpoint();
+	});
+}
+
+#[test]
+fn try_mutate_exists_account_updated() {
+	new_test_ext().execute_with(|| {
+		// Prepare test data.
+		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
+		let nonce = 1;
+		let data = 1;
+		<Account<Test>>::insert(account_id.clone(), AccountInfo { nonce, data });
+
+		// Check test preconditions.
+		assert!(EvmSystem::account_exists(&account_id));
+
+		// Set mock expectations.
+		let on_new_account_ctx = MockDummyOnNewAccount::on_new_account_context();
+		on_new_account_ctx.expect().never();
+		let on_killed_account_ctx = MockDummyOnKilledAccount::on_killed_account_context();
+		on_killed_account_ctx.expect().never();
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		// Invoke the function under test.
+		EvmSystem::try_mutate_exists(&account_id, |maybe_data| -> Result<(), DispatchError> {
+			if let Some(ref mut data) = maybe_data {
+				*data += 1;
+			}
+			Ok(())
+		})
+		.unwrap();
+
+		// Assert state changes.
+		assert!(EvmSystem::account_exists(&account_id));
+		assert_eq!(EvmSystem::get(&account_id), data + 1);
+
+		// Assert mock invocations.
+		on_new_account_ctx.checkpoint();
+		on_killed_account_ctx.checkpoint();
+	});
+}
+
+#[test]
+fn try_mutate_exists_account_removed() {
+	new_test_ext().execute_with(|| {
+		// Prepare test data.
+		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
+		let nonce = 1;
+		let data = 1;
+		<Account<Test>>::insert(account_id.clone(), AccountInfo { nonce, data });
+
+		// Check test preconditions.
+		assert!(EvmSystem::account_exists(&account_id));
+
+		// Set mock expectations.
+		let on_new_account_ctx = MockDummyOnNewAccount::on_new_account_context();
+		on_new_account_ctx.expect().never();
+		let on_killed_account_ctx = MockDummyOnKilledAccount::on_killed_account_context();
+		on_killed_account_ctx
+			.expect()
+			.once()
+			.with(predicate::eq(account_id))
+			.return_const(());
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		// Invoke the function under test.
+		EvmSystem::try_mutate_exists(&account_id, |maybe_data| -> Result<(), DispatchError> {
+			*maybe_data = None;
+			Ok(())
+		})
+		.unwrap();
+
+		// Assert state changes.
+		assert!(!EvmSystem::account_exists(&account_id));
+		System::assert_has_event(RuntimeEvent::EvmSystem(Event::KilledAccount {
+			account: account_id,
+		}));
+
+		// Assert mock invocations.
+		on_new_account_ctx.checkpoint();
+		on_killed_account_ctx.checkpoint();
+	});
+}
+
+#[test]
+fn try_mutate_exists_fails_without_changes() {
+	new_test_ext().execute_with(|| {
+		// Prepare test data.
+		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
+		let nonce = 1;
+		let data = 1;
+		<Account<Test>>::insert(account_id.clone(), AccountInfo { nonce, data });
+
+		// Check test preconditions.
+		assert!(EvmSystem::account_exists(&account_id));
+
+		// Set mock expectations.
+		let on_new_account_ctx = MockDummyOnNewAccount::on_new_account_context();
+		on_new_account_ctx.expect().never();
+		let on_killed_account_ctx = MockDummyOnKilledAccount::on_killed_account_context();
+		on_killed_account_ctx.expect().never();
+
+		// Invoke the function under test.
+		<Account<Test>>::try_mutate_exists(account_id, |_maybe_data| -> Result<(), ()> { Err(()) })
+			.unwrap_err();
+
+		// Assert state changes.
+		assert!(EvmSystem::account_exists(&account_id));
+		assert_eq!(EvmSystem::get(&account_id), data);
+
+		// Assert mock invocations.
+		on_new_account_ctx.checkpoint();
+		on_killed_account_ctx.checkpoint();
+	});
+}
