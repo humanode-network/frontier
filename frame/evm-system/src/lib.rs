@@ -202,7 +202,9 @@ impl<T: Config> StoredMap<<T as Config>::AccountId, <T as Config>::AccountData> 
 				Account::<T>::remove(k);
 				Self::on_killed_account(k.clone());
 			}
-			_ => {}
+			(None, false) => {
+				// Do nothing.
+			}
 		}
 
 		Ok(result)
