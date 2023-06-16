@@ -84,7 +84,7 @@ impl pallet_evm_system::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type AccountId = H160;
 	type Nonce = u64;
-	type AccountData = ();
+	type AccountData = u64;
 	type OnNewAccount = MockDummyOnNewAccount;
 	type OnKilledAccount = MockDummyOnKilledAccount;
 }
