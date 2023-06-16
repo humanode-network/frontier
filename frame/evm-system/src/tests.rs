@@ -267,3 +267,31 @@ fn try_mutate_exists_fails_without_changes() {
 		assert_eq!(EvmSystem::get(&account_id), data);
 	});
 }
+
+/// This test verifies that try_mutate_exists works as expected in case data wasn't providing
+/// and error happens during data mutation.
+#[test]
+fn try_mutate_exists_account_not_created() {
+	new_test_ext().execute_with(|| {
+		// Prepare test data.
+		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
+
+		// Check test preconditions.
+		assert!(!EvmSystem::account_exists(&account_id));
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		// Invoke the function under test.
+		assert_noop!(
+			<Account<Test>>::try_mutate_exists(account_id, |maybe_data| -> Result<(), ()> {
+				*maybe_data = None;
+				Err(())
+			}),
+			()
+		);
+
+		// Assert state changes.
+		assert!(!EvmSystem::account_exists(&account_id));
+	});
+}
