@@ -64,9 +64,6 @@ pub mod runner;
 #[cfg(test)]
 mod tests;
 
-mod account_provider;
-pub use account_provider::{AccountProvider, NativeSystemAccountProvider};
-
 use frame_support::{
 	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
 	traits::{
@@ -79,7 +76,7 @@ use frame_system::RawOrigin;
 use impl_trait_for_tuples::impl_for_tuples;
 use sp_core::{Hasher, H160, H256, U256};
 use sp_runtime::{
-	traits::{BadOrigin, Saturating, UniqueSaturatedInto, AtLeast32Bit, Zero},
+	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero},
 	AccountId32, DispatchErrorWithPostInfo,
 };
 use sp_std::{cmp::min, vec::Vec};
@@ -90,9 +87,9 @@ pub use evm::{
 #[cfg(feature = "std")]
 use fp_evm::GenesisAccount;
 pub use fp_evm::{
-	Account, CallInfo, CreateInfo, ExecutionInfo, FeeCalculator, InvalidEvmTransactionError,
-	LinearCostPrecompile, Log, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
-	PrecompileResult, PrecompileSet, Vicinity,
+	Account, AccountProvider, CallInfo, CreateInfo, ExecutionInfo, FeeCalculator,
+	InvalidEvmTransactionError, LinearCostPrecompile, Log, Precompile, PrecompileFailure,
+	PrecompileHandle, PrecompileOutput, PrecompileResult, PrecompileSet, Vicinity,
 };
 
 pub use self::{
@@ -131,12 +128,16 @@ pub mod pallet {
 		/// Allow the origin to call on behalf of given address.
 		type CallOrigin: EnsureAddressOrigin<Self::RuntimeOrigin>;
 		/// Allow the origin to withdraw on behalf of given address.
-		type WithdrawOrigin: EnsureAddressOrigin<Self::RuntimeOrigin, Success = <Self::AccountProvider as AccountProvider>::AccountId>;
+		type WithdrawOrigin: EnsureAddressOrigin<
+			Self::RuntimeOrigin,
+			Success = <Self::AccountProvider as AccountProvider>::AccountId,
+		>;
 
 		/// Mapping from address to account id.
 		type AddressMapping: AddressMapping<<Self::AccountProvider as AccountProvider>::AccountId>;
 		/// Currency type for withdraw and balance storage.
-		type Currency: Currency<<Self::AccountProvider as AccountProvider>::AccountId> + Inspect<<Self::AccountProvider as AccountProvider>::AccountId>;
+		type Currency: Currency<<Self::AccountProvider as AccountProvider>::AccountId>
+			+ Inspect<<Self::AccountProvider as AccountProvider>::AccountId>;
 
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -517,12 +518,14 @@ pub mod pallet {
 }
 
 /// Type alias for currency balance.
-pub type BalanceOf<T> =
-	<<T as Config>::Currency as Currency<<<T as Config>::AccountProvider as AccountProvider>::AccountId>>::Balance;
+pub type BalanceOf<T> = <<T as Config>::Currency as Currency<
+	<<T as Config>::AccountProvider as AccountProvider>::AccountId,
+>>::Balance;
 
 /// Type alias for negative imbalance during fees
-type NegativeImbalanceOf<C, T> =
-	<C as Currency<<<T as Config>::AccountProvider as AccountProvider>::AccountId>>::NegativeImbalance;
+type NegativeImbalanceOf<C, T> = <C as Currency<
+	<<T as Config>::AccountProvider as AccountProvider>::AccountId,
+>>::NegativeImbalance;
 
 pub trait EnsureAddressOrigin<OuterOrigin> {
 	/// Success return type.
@@ -788,7 +791,9 @@ where
 		Opposite = C::PositiveImbalance,
 	>,
 	OU: OnUnbalanced<NegativeImbalanceOf<C, T>>,
-	U256: UniqueSaturatedInto<<C as Currency<<<T as Config>::AccountProvider as AccountProvider>::AccountId>>::Balance>,
+	U256: UniqueSaturatedInto<
+		<C as Currency<<<T as Config>::AccountProvider as AccountProvider>::AccountId>>::Balance,
+	>,
 {
 	// Kept type as Option to satisfy bound of Default
 	type LiquidityInfo = Option<NegativeImbalanceOf<C, T>>;

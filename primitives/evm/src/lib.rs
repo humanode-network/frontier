@@ -17,6 +17,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+mod account_provider;
 mod precompile;
 mod validation;
 
@@ -34,6 +35,7 @@ pub use evm::{
 };
 
 pub use self::{
+	account_provider::{AccountProvider, NativeSystemAccountProvider},
 	precompile::{
 		Context, ExitError, ExitRevert, ExitSucceed, LinearCostPrecompile, Precompile,
 		PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult, PrecompileSet,

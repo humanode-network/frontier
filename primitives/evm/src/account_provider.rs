@@ -1,6 +1,6 @@
 //! Custom account provider logic.
 
-use super::*;
+use sp_runtime::traits::AtLeast32Bit;
 
 /// The account provider interface abstraction layer.
 ///
@@ -43,9 +43,9 @@ pub trait AccountProvider {
 /// Native system account provider that `frame_system` provides.
 pub struct NativeSystemAccountProvider<T>(sp_std::marker::PhantomData<T>);
 
-impl<T: Config> AccountProvider for NativeSystemAccountProvider<T> {
-	type AccountId = <T as frame_system::Config>::AccountId;
-	type Index = <T as frame_system::Config>::Index;
+impl<T: frame_system::Config> AccountProvider for NativeSystemAccountProvider<T> {
+	type AccountId = T::AccountId;
+	type Index = T::Index;
 
 	fn account_nonce(who: &Self::AccountId) -> Self::Index {
 		frame_system::Pallet::<T>::account_nonce(&who)
