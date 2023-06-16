@@ -256,11 +256,13 @@ fn try_mutate_exists_fails_without_changes() {
 		assert!(EvmSystem::account_exists(&account_id));
 
 		// Invoke the function under test.
-		<Account<Test>>::try_mutate_exists(account_id, |maybe_data| -> Result<(), ()> {
-			*maybe_data = None;
-			Err(())
-		})
-		.unwrap_err();
+		assert_noop!(
+			<Account<Test>>::try_mutate_exists(account_id, |maybe_data| -> Result<(), ()> {
+				*maybe_data = None;
+				Err(())
+			}),
+			()
+		);
 
 		// Assert state changes.
 		assert!(EvmSystem::account_exists(&account_id));
