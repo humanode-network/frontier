@@ -2171,7 +2171,6 @@ version = "3.0.0-dev"
 dependencies = [
  "evm",
  "frame-support",
- "frame-system",
  "parity-scale-codec",
  "serde",
  "sp-core",

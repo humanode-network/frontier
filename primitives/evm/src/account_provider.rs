@@ -39,26 +39,3 @@ pub trait AccountProvider {
 	/// Incremented with each new transaction submitted by the account.
 	fn inc_account_nonce(who: &Self::AccountId);
 }
-
-/// Native system account provider that `frame_system` provides.
-pub struct NativeSystemAccountProvider<T>(sp_std::marker::PhantomData<T>);
-
-impl<T: frame_system::Config> AccountProvider for NativeSystemAccountProvider<T> {
-	type AccountId = T::AccountId;
-	type Index = T::Index;
-
-	fn account_nonce(who: &Self::AccountId) -> Self::Index {
-		frame_system::Pallet::<T>::account_nonce(&who)
-	}
-
-	fn inc_account_nonce(who: &Self::AccountId) {
-		frame_system::Pallet::<T>::inc_account_nonce(&who)
-	}
-
-	fn create_account(who: &Self::AccountId) {
-		let _ = frame_system::Pallet::<T>::inc_sufficients(&who);
-	}
-	fn remove_account(who: &Self::AccountId) {
-		let _ = frame_system::Pallet::<T>::dec_sufficients(&who);
-	}
-}

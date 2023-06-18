@@ -35,7 +35,7 @@ pub use evm::{
 };
 
 pub use self::{
-	account_provider::{AccountProvider, NativeSystemAccountProvider},
+	account_provider::AccountProvider,
 	precompile::{
 		Context, ExitError, ExitRevert, ExitSucceed, LinearCostPrecompile, Precompile,
 		PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult, PrecompileSet,
