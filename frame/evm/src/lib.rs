@@ -65,9 +65,6 @@ pub mod runner;
 mod tests;
 pub mod weights;
 
-mod account_provider;
-pub use account_provider::{AccountProvider, NativeSystemAccountProvider};
-
 pub use evm::{
 	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
 };
@@ -92,7 +89,7 @@ use frame_support::{
 use frame_system::RawOrigin;
 use sp_core::{H160, H256, U256};
 use sp_runtime::{
-	traits::{BadOrigin, NumberFor, Saturating, UniqueSaturatedInto, AtLeast32Bit, Zero},
+	traits::{BadOrigin, NumberFor, Saturating, UniqueSaturatedInto, Zero},
 	AccountId32, DispatchErrorWithPostInfo,
 };
 use sp_std::{cmp::min, collections::btree_map::BTreeMap, vec::Vec};
@@ -100,7 +97,7 @@ use sp_std::{cmp::min, collections::btree_map::BTreeMap, vec::Vec};
 use fp_account::AccountId20;
 use fp_evm::GenesisAccount;
 pub use fp_evm::{
-	Account, CallInfo, CreateInfo, ExecutionInfoV2 as ExecutionInfo, FeeCalculator,
+	Account, AccountProvider, CallInfo, CreateInfo, ExecutionInfoV2 as ExecutionInfo, FeeCalculator,
 	IsPrecompileResult, LinearCostPrecompile, Log, Precompile, PrecompileFailure, PrecompileHandle,
 	PrecompileOutput, PrecompileResult, PrecompileSet, TransactionValidationError, Vicinity,
 };
@@ -1070,3 +1067,27 @@ impl<T> OnCreate<T> for Tuple {
 		)*)
 	}
 }
+
+/// Native system account provider that `frame_system` provides.
+pub struct NativeSystemAccountProvider<T>(sp_std::marker::PhantomData<T>);
+
+impl<T: frame_system::Config> AccountProvider for NativeSystemAccountProvider<T> {
+	type AccountId = T::AccountId;
+	type Nonce = T::Nonce;
+
+	fn account_nonce(who: &Self::AccountId) -> Self::Nonce {
+		frame_system::Pallet::<T>::account_nonce(&who)
+	}
+
+	fn inc_account_nonce(who: &Self::AccountId) {
+		frame_system::Pallet::<T>::inc_account_nonce(&who)
+	}
+
+	fn create_account(who: &Self::AccountId) {
+		let _ = frame_system::Pallet::<T>::inc_sufficients(&who);
+	}
+	fn remove_account(who: &Self::AccountId) {
+		let _ = frame_system::Pallet::<T>::dec_sufficients(&who);
+	}
+}
+

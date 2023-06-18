@@ -1,6 +1,6 @@
 //! Custom account provider logic.
 
-use super::*;
+use sp_runtime::traits::AtLeast32Bit;
 
 /// The account provider interface abstraction layer.
 ///
@@ -38,27 +38,4 @@ pub trait AccountProvider {
 	///
 	/// Incremented with each new transaction submitted by the account.
 	fn inc_account_nonce(who: &Self::AccountId);
-}
-
-/// Native system account provider that `frame_system` provides.
-pub struct NativeSystemAccountProvider<T>(sp_std::marker::PhantomData<T>);
-
-impl<T: Config> AccountProvider for NativeSystemAccountProvider<T> {
-	type AccountId = <T as frame_system::Config>::AccountId;
-	type Nonce = <T as frame_system::Config>::Nonce;
-
-	fn account_nonce(who: &Self::AccountId) -> Self::Nonce {
-		frame_system::Pallet::<T>::account_nonce(&who)
-	}
-
-	fn inc_account_nonce(who: &Self::AccountId) {
-		frame_system::Pallet::<T>::inc_account_nonce(&who)
-	}
-
-	fn create_account(who: &Self::AccountId) {
-		let _ = frame_system::Pallet::<T>::inc_sufficients(&who);
-	}
-	fn remove_account(who: &Self::AccountId) {
-		let _ = frame_system::Pallet::<T>::dec_sufficients(&who);
-	}
 }
