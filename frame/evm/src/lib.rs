@@ -64,9 +64,6 @@ pub mod runner;
 #[cfg(test)]
 mod tests;
 
-mod account_provider;
-pub use account_provider::{AccountProvider, NativeSystemAccountProvider};
-
 use frame_support::{
 	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
 	traits::{
@@ -79,7 +76,7 @@ use frame_system::RawOrigin;
 use impl_trait_for_tuples::impl_for_tuples;
 use sp_core::{Hasher, H160, H256, U256};
 use sp_runtime::{
-	traits::{BadOrigin, Saturating, UniqueSaturatedInto, AtLeast32Bit, Zero},
+	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero},
 	AccountId32, DispatchErrorWithPostInfo,
 };
 use sp_std::{cmp::min, vec::Vec};
@@ -90,9 +87,9 @@ pub use evm::{
 #[cfg(feature = "std")]
 use fp_evm::GenesisAccount;
 pub use fp_evm::{
-	Account, CallInfo, CreateInfo, ExecutionInfo, FeeCalculator, InvalidEvmTransactionError,
-	LinearCostPrecompile, Log, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
-	PrecompileResult, PrecompileSet, Vicinity,
+	Account, AccountProvider, CallInfo, CreateInfo, ExecutionInfo, FeeCalculator,
+	InvalidEvmTransactionError, LinearCostPrecompile, Log, Precompile, PrecompileFailure,
+	PrecompileHandle, PrecompileOutput, PrecompileResult, PrecompileSet, Vicinity,
 };
 
 pub use self::{
@@ -919,3 +916,27 @@ impl<T> OnCreate<T> for Tuple {
 		)*)
 	}
 }
+
+/// Native system account provider that `frame_system` provides.
+pub struct NativeSystemAccountProvider<T>(sp_std::marker::PhantomData<T>);
+
+impl<T: frame_system::Config> AccountProvider for NativeSystemAccountProvider<T> {
+	type AccountId = T::AccountId;
+	type Index = T::Index;
+
+	fn account_nonce(who: &Self::AccountId) -> Self::Index {
+		frame_system::Pallet::<T>::account_nonce(&who)
+	}
+
+	fn inc_account_nonce(who: &Self::AccountId) {
+		frame_system::Pallet::<T>::inc_account_nonce(&who)
+	}
+
+	fn create_account(who: &Self::AccountId) {
+		let _ = frame_system::Pallet::<T>::inc_sufficients(&who);
+	}
+	fn remove_account(who: &Self::AccountId) {
+		let _ = frame_system::Pallet::<T>::dec_sufficients(&who);
+	}
+}
+

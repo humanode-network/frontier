@@ -211,6 +211,27 @@ impl<T: Config> StoredMap<<T as Config>::AccountId, <T as Config>::AccountData> 
 	}
 }
 
+impl<T: Config> fp_evm::AccountProvider for Pallet<T> {
+	type AccountId = <T as Config>::AccountId;
+	type Index = <T as Config>::Index;
+
+	fn create_account(who: &Self::AccountId) {
+		let _ = Self::create_account(who);
+	}
+
+	fn remove_account(who: &Self::AccountId) {
+		let _ = Self::remove_account(who);
+	}
+
+	fn account_nonce(who: &Self::AccountId) -> Self::Index {
+		Self::account_nonce(who)
+	}
+
+	fn inc_account_nonce(who: &Self::AccountId) {
+		Self::inc_account_nonce(who);
+	}
+}
+
 /// Interface to handle account creation.
 pub trait OnNewAccount<AccountId> {
 	/// A new account `who` has been registered.

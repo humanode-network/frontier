@@ -4933,6 +4933,7 @@ dependencies = [
 name = "pallet-evm-system"
 version = "1.0.0-dev"
 dependencies = [
+ "fp-evm",
  "frame-support",
  "frame-system",
  "log",
