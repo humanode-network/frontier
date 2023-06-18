@@ -138,11 +138,9 @@ impl crate::Config for Test {
 	type WeightPerGas = WeightPerGas;
 
 	type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
-	type CallOrigin =
-		EnsureAddressRoot<<Self::AccountProvider as crate::AccountProvider>::AccountId>;
+	type CallOrigin = EnsureAddressRoot<<Self::AccountProvider as crate::AccountProvider>::AccountId>;
 
-	type WithdrawOrigin =
-		EnsureAddressNever<<Self::AccountProvider as crate::AccountProvider>::AccountId>;
+	type WithdrawOrigin = EnsureAddressNever<<Self::AccountProvider as crate::AccountProvider>::AccountId>;
 	type AddressMapping = IdentityAddressMapping;
 	type Currency = Balances;
 

@@ -128,16 +128,12 @@ pub mod pallet {
 		/// Allow the origin to call on behalf of given address.
 		type CallOrigin: EnsureAddressOrigin<Self::RuntimeOrigin>;
 		/// Allow the origin to withdraw on behalf of given address.
-		type WithdrawOrigin: EnsureAddressOrigin<
-			Self::RuntimeOrigin,
-			Success = <Self::AccountProvider as AccountProvider>::AccountId,
-		>;
+		type WithdrawOrigin: EnsureAddressOrigin<Self::RuntimeOrigin, Success = <Self::AccountProvider as AccountProvider>::AccountId>;
 
 		/// Mapping from address to account id.
 		type AddressMapping: AddressMapping<<Self::AccountProvider as AccountProvider>::AccountId>;
 		/// Currency type for withdraw and balance storage.
-		type Currency: Currency<<Self::AccountProvider as AccountProvider>::AccountId>
-			+ Inspect<<Self::AccountProvider as AccountProvider>::AccountId>;
+		type Currency: Currency<<Self::AccountProvider as AccountProvider>::AccountId> + Inspect<<Self::AccountProvider as AccountProvider>::AccountId>;
 
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -518,14 +514,12 @@ pub mod pallet {
 }
 
 /// Type alias for currency balance.
-pub type BalanceOf<T> = <<T as Config>::Currency as Currency<
-	<<T as Config>::AccountProvider as AccountProvider>::AccountId,
->>::Balance;
+pub type BalanceOf<T> =
+	<<T as Config>::Currency as Currency<<<T as Config>::AccountProvider as AccountProvider>::AccountId>>::Balance;
 
 /// Type alias for negative imbalance during fees
-type NegativeImbalanceOf<C, T> = <C as Currency<
-	<<T as Config>::AccountProvider as AccountProvider>::AccountId,
->>::NegativeImbalance;
+type NegativeImbalanceOf<C, T> =
+	<C as Currency<<<T as Config>::AccountProvider as AccountProvider>::AccountId>>::NegativeImbalance;
 
 pub trait EnsureAddressOrigin<OuterOrigin> {
 	/// Success return type.
@@ -791,9 +785,7 @@ where
 		Opposite = C::PositiveImbalance,
 	>,
 	OU: OnUnbalanced<NegativeImbalanceOf<C, T>>,
-	U256: UniqueSaturatedInto<
-		<C as Currency<<<T as Config>::AccountProvider as AccountProvider>::AccountId>>::Balance,
-	>,
+	U256: UniqueSaturatedInto<<C as Currency<<<T as Config>::AccountProvider as AccountProvider>::AccountId>>::Balance>,
 {
 	// Kept type as Option to satisfy bound of Default
 	type LiquidityInfo = Option<NegativeImbalanceOf<C, T>>;
