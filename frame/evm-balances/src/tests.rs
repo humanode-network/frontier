@@ -118,6 +118,37 @@ fn slashing_balance_works() {
 }
 
 #[test]
+fn withdraw_balance_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let withdrawed_amount = 1000;
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		// Invoke the function under test.
+		assert_ok!(EvmBalances::withdraw(
+			&alice(),
+			1000,
+			WithdrawReasons::FEE,
+			ExistenceRequirement::KeepAlive
+		));
+
+		// Assert state changes.
+		assert_eq!(
+			EvmBalances::total_balance(&alice()),
+			INIT_BALANCE - withdrawed_amount
+		);
+		System::assert_has_event(RuntimeEvent::EvmBalances(crate::Event::Withdraw {
+			who: alice(),
+			amount: withdrawed_amount,
+		}));
+	});
+}
+
+#[test]
 fn account_should_be_reaped() {
 	new_test_ext().execute_with_ext(|_| {
 		// Check test preconditions.
