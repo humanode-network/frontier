@@ -27,6 +27,26 @@ fn basic_setup_works() {
 }
 
 #[test]
+fn account_should_be_reaped() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert!(EvmSystem::account_exists(&bob()));
+
+		// Invoke the function under test.
+		assert_ok!(<EvmBalances as Currency<_>>::transfer(
+			&bob(),
+			&alice(),
+			INIT_BALANCE,
+			AllowDeath
+		));
+
+		// Assert state changes.
+		assert_eq!(EvmBalances::free_balance(&bob()), 0);
+		assert!(!EvmSystem::account_exists(&bob()));
+	});
+}
+
+#[test]
 fn fee_deduction() {
 	new_test_ext().execute_with(|| {
 		let charlie = H160::from_str("1000000000000000000000000000000000000003").unwrap();
