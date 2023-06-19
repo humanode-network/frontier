@@ -27,7 +27,7 @@ fn basic_setup_works() {
 }
 
 #[test]
-fn balance_transfer_works() {
+fn transfer_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Check test preconditions.
 		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
