@@ -252,7 +252,7 @@ fn currency_withdraw_works() {
 }
 
 #[test]
-fn currency_make_free_balance_be() {
+fn currency_make_free_balance_be_works() {
 	new_test_ext().execute_with(|| {
 		// Prepare test preconditions.
 		let charlie = H160::from_str("1000000000000000000000000000000000000003").unwrap();
