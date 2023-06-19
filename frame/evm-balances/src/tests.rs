@@ -290,7 +290,7 @@ fn evm_system_account_should_be_reaped() {
 }
 
 #[test]
-fn evm_transferring_too_high_value_should_not_panic() {
+fn evm_balances_transferring_too_high_value_should_not_panic() {
 	new_test_ext().execute_with(|| {
 		// Prepare test preconditions.
 		let charlie = H160::from_str("1000000000000000000000000000000000000003").unwrap();
