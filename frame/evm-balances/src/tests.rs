@@ -270,7 +270,7 @@ fn currency_make_free_balance_be() {
 }
 
 #[test]
-fn account_should_be_reaped() {
+fn evm_system_account_should_be_reaped() {
 	new_test_ext().execute_with_ext(|_| {
 		// Check test preconditions.
 		assert!(EvmSystem::account_exists(&bob()));
@@ -290,7 +290,7 @@ fn account_should_be_reaped() {
 }
 
 #[test]
-fn transferring_too_high_value_should_not_panic() {
+fn evm_transferring_too_high_value_should_not_panic() {
 	new_test_ext().execute_with(|| {
 		// Prepare test preconditions.
 		let charlie = H160::from_str("1000000000000000000000000000000000000003").unwrap();
@@ -307,7 +307,7 @@ fn transferring_too_high_value_should_not_panic() {
 }
 
 #[test]
-fn fee_deduction() {
+fn evm_fee_deduction() {
 	new_test_ext().execute_with(|| {
 		let charlie = H160::from_str("1000000000000000000000000000000000000003").unwrap();
 
@@ -331,7 +331,7 @@ fn fee_deduction() {
 }
 
 #[test]
-fn issuance_after_tip() {
+fn evm_issuance_after_tip() {
 	new_test_ext().execute_with(|| {
 		let before_tip = <Test as pallet_evm::Config>::Currency::total_issuance();
 
@@ -362,7 +362,7 @@ fn issuance_after_tip() {
 }
 
 #[test]
-fn refunds_should_work() {
+fn evm_refunds_should_work() {
 	new_test_ext().execute_with(|| {
 		let before_call = EVM::account_basic(&alice()).0.balance;
 		// Gas price is not part of the actual fee calculations anymore, only the base fee.
@@ -393,7 +393,7 @@ fn refunds_should_work() {
 }
 
 #[test]
-fn refunds_and_priority_should_work() {
+fn evm_refunds_and_priority_should_work() {
 	new_test_ext().execute_with(|| {
 		let before_call = EVM::account_basic(&alice()).0.balance;
 		// We deliberately set a base fee + max tip > max fee.
@@ -429,7 +429,7 @@ fn refunds_and_priority_should_work() {
 }
 
 #[test]
-fn call_should_fail_with_priority_greater_than_max_fee() {
+fn evm_call_should_fail_with_priority_greater_than_max_fee() {
 	new_test_ext().execute_with(|| {
 		// Max priority greater than max fee should fail.
 		let tip: u128 = 1_100_000_000;
@@ -455,7 +455,7 @@ fn call_should_fail_with_priority_greater_than_max_fee() {
 }
 
 #[test]
-fn call_should_succeed_with_priority_equal_to_max_fee() {
+fn evm_call_should_succeed_with_priority_equal_to_max_fee() {
 	new_test_ext().execute_with(|| {
 		let tip: u128 = 1_000_000_000;
 		// Mimics the input for pre-eip-1559 transaction types where `gas_price`
