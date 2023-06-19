@@ -76,6 +76,38 @@ fn currency_deactivate_reactivate_works() {
 }
 
 #[test]
+fn currency_burn_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+
+		// Burn some balance.
+		let imbalance = EvmBalances::burn(100);
+
+		// Assert state changes.
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE - 100);
+		drop(imbalance);
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+	});
+}
+
+#[test]
+fn currency_issue_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+
+		// Issue some balance.
+		let imbalance = EvmBalances::issue(100);
+
+		// Assert state changes.
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE + 100);
+		drop(imbalance);
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+	});
+}
+
+#[test]
 fn transfer_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Check test preconditions.
