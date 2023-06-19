@@ -108,7 +108,7 @@ fn currency_issue_works() {
 }
 
 #[test]
-fn transfer_works() {
+fn currency_transfer_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Check test preconditions.
 		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
@@ -144,7 +144,7 @@ fn transfer_works() {
 }
 
 #[test]
-fn slashing_balance_works() {
+fn currency_slashing_balance_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Check test preconditions.
 		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
@@ -170,7 +170,7 @@ fn slashing_balance_works() {
 }
 
 #[test]
-fn deposit_into_existing_works() {
+fn currency_deposit_into_existing_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Check test preconditions.
 		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
@@ -199,7 +199,7 @@ fn deposit_into_existing_works() {
 }
 
 #[test]
-fn deposit_creating_works() {
+fn currency_deposit_creating_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test preconditions.
 		let charlie = H160::from_str("1000000000000000000000000000000000000003").unwrap();
@@ -221,7 +221,7 @@ fn deposit_creating_works() {
 }
 
 #[test]
-fn withdraw_balance_works() {
+fn currency_withdraw_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Check test preconditions.
 		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
@@ -252,6 +252,24 @@ fn withdraw_balance_works() {
 }
 
 #[test]
+fn currency_make_free_balance_be() {
+	new_test_ext().execute_with(|| {
+		// Prepare test preconditions.
+		let charlie = H160::from_str("1000000000000000000000000000000000000003").unwrap();
+		let made_free_balance = 100;
+
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&charlie), 0);
+
+		// Invoke the function under test.
+		let _ = EvmBalances::make_free_balance_be(&charlie, made_free_balance);
+
+		// Assert state changes.
+		assert_eq!(EvmBalances::total_balance(&charlie), made_free_balance);
+	});
+}
+
+#[test]
 fn account_should_be_reaped() {
 	new_test_ext().execute_with_ext(|_| {
 		// Check test preconditions.
@@ -270,6 +288,7 @@ fn account_should_be_reaped() {
 		assert!(!EvmSystem::account_exists(&bob()));
 	});
 }
+
 #[test]
 fn transferring_too_high_value_should_not_panic() {
 	new_test_ext().execute_with(|| {
