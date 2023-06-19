@@ -27,27 +27,43 @@ fn basic_setup_works() {
 }
 
 #[test]
-fn account_should_be_reaped() {
+fn balance_transfer_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Check test preconditions.
-		assert!(EvmSystem::account_exists(&bob()));
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let transfered_amount = 100;
+
+		// Set block number to enable events.
+		System::set_block_number(1);
 
 		// Invoke the function under test.
-		assert_ok!(<EvmBalances as Currency<_>>::transfer(
-			&bob(),
+		assert_ok!(EvmBalances::transfer(
 			&alice(),
-			INIT_BALANCE,
-			AllowDeath
+			&bob(),
+			transfered_amount,
+			ExistenceRequirement::KeepAlive
 		));
 
 		// Assert state changes.
-		assert_eq!(EvmBalances::free_balance(&bob()), 0);
-		assert!(!EvmSystem::account_exists(&bob()));
+		assert_eq!(
+			EvmBalances::total_balance(&alice()),
+			INIT_BALANCE - transfered_amount
+		);
+		assert_eq!(
+			EvmBalances::total_balance(&bob()),
+			INIT_BALANCE + transfered_amount
+		);
+		System::assert_has_event(RuntimeEvent::EvmBalances(crate::Event::Transfer {
+			from: alice(),
+			to: bob(),
+			amount: transfered_amount,
+		}));
 	});
 }
 
 #[test]
-fn deposit_into_existing() {
+fn deposit_into_existing_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Check test preconditions.
 		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
@@ -70,12 +86,32 @@ fn deposit_into_existing() {
 		);
 		System::assert_has_event(RuntimeEvent::EvmBalances(crate::Event::Deposit {
 			who: alice(),
-			amount: 10,
+			amount: deposited_amount,
 		}));
 		assert_eq!(
 			EvmBalances::total_balance(&alice()),
 			INIT_BALANCE + deposited_amount
 		);
+	});
+}
+
+#[test]
+fn account_should_be_reaped() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert!(EvmSystem::account_exists(&bob()));
+
+		// Invoke the function under test.
+		assert_ok!(EvmBalances::transfer(
+			&bob(),
+			&alice(),
+			INIT_BALANCE,
+			ExistenceRequirement::AllowDeath
+		));
+
+		// Assert state changes.
+		assert_eq!(EvmBalances::free_balance(&bob()), 0);
+		assert!(!EvmSystem::account_exists(&bob()));
 	});
 }
 
