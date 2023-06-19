@@ -27,6 +27,55 @@ fn basic_setup_works() {
 }
 
 #[test]
+fn currency_total_balance_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check the total balance value.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+	});
+}
+
+#[test]
+fn currency_can_slash_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check slashing.
+		assert!(EvmBalances::can_slash(&alice(), 100));
+	});
+}
+
+#[test]
+fn currency_total_issuance_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check the total issuance value.
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+	});
+}
+
+#[test]
+fn currency_active_issuance_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check the active issuance value.
+		assert_eq!(EvmBalances::active_issuance(), 2 * INIT_BALANCE);
+	});
+}
+
+#[test]
+fn currency_deactivate_reactivate_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(<InactiveIssuance<Test>>::get(), 0);
+
+		// Deactivate some balance.
+		EvmBalances::deactivate(100);
+		// Assert state changes.
+		assert_eq!(<InactiveIssuance<Test>>::get(), 100);
+		// Reactivate some balance.
+		EvmBalances::reactivate(40);
+		// Assert state changes.
+		assert_eq!(<InactiveIssuance<Test>>::get(), 60);
+	});
+}
+
+#[test]
 fn transfer_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Check test preconditions.
