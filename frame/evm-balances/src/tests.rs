@@ -219,6 +219,9 @@ fn currency_deposit_creating_works() {
 			amount: deposited_amount,
 		}));
 		assert!(EvmSystem::account_exists(&charlie));
+		System::assert_has_event(RuntimeEvent::EvmSystem(
+			pallet_evm_system::Event::NewAccount { account: charlie },
+		));
 	});
 }
 
@@ -277,6 +280,9 @@ fn evm_system_account_should_be_reaped() {
 		// Check test preconditions.
 		assert!(EvmSystem::account_exists(&bob()));
 
+		// Set block number to enable events.
+		System::set_block_number(1);
+
 		// Invoke the function under test.
 		assert_ok!(EvmBalances::transfer(
 			&bob(),
@@ -288,6 +294,9 @@ fn evm_system_account_should_be_reaped() {
 		// Assert state changes.
 		assert_eq!(EvmBalances::free_balance(&bob()), 0);
 		assert!(!EvmSystem::account_exists(&bob()));
+		System::assert_has_event(RuntimeEvent::EvmSystem(
+			pallet_evm_system::Event::KilledAccount { account: bob() },
+		));
 	});
 }
 
