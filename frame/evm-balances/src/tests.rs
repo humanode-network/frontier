@@ -1,6 +1,6 @@
 //! Unit tests.
 
-use frame_support::{assert_ok, weights::Weight};
+use frame_support::{assert_noop, assert_ok, weights::Weight};
 use pallet_evm::{FeeCalculator, Runner};
 use sp_core::{H160, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
@@ -165,6 +165,22 @@ fn account_should_be_reaped() {
 		// Assert state changes.
 		assert_eq!(EvmBalances::free_balance(&bob()), 0);
 		assert!(!EvmSystem::account_exists(&bob()));
+	});
+}
+#[test]
+fn transferring_too_high_value_should_not_panic() {
+	new_test_ext().execute_with(|| {
+		// Prepare test preconditions.
+		let charlie = H160::from_str("1000000000000000000000000000000000000003").unwrap();
+		let eve = H160::from_str("1000000000000000000000000000000000000004").unwrap();
+		EvmBalances::make_free_balance_be(&charlie, u64::MAX);
+		EvmBalances::make_free_balance_be(&eve, 1);
+
+		// Invoke the function under test.
+		assert_noop!(
+			EvmBalances::transfer(&charlie, &eve, u64::MAX, ExistenceRequirement::AllowDeath),
+			ArithmeticError::Overflow,
+		);
 	});
 }
 
