@@ -37,7 +37,7 @@ fn currency_total_balance_works() {
 #[test]
 fn currency_can_slash_works() {
 	new_test_ext().execute_with_ext(|_| {
-		// Check slashing.
+		// Check possible slashing.
 		assert!(EvmBalances::can_slash(&alice(), 100));
 	});
 }
