@@ -204,6 +204,7 @@ fn currency_deposit_creating_works() {
 		// Prepare test preconditions.
 		let charlie = H160::from_str("1000000000000000000000000000000000000003").unwrap();
 		let deposited_amount = 10;
+		assert!(!EvmSystem::account_exists(&charlie));
 
 		// Set block number to enable events.
 		System::set_block_number(1);
@@ -217,6 +218,7 @@ fn currency_deposit_creating_works() {
 			who: charlie,
 			amount: deposited_amount,
 		}));
+		assert!(EvmSystem::account_exists(&charlie));
 	});
 }
 
