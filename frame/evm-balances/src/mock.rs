@@ -141,31 +141,8 @@ parameter_types! {
 	pub WeightPerGas: Weight = Weight::from_ref_time(20_000);
 }
 
-pub struct EvmAccountProvider;
-
-impl pallet_evm::AccountProvider for EvmAccountProvider {
-	type AccountId = H160;
-	type Index = u64;
-
-	fn create_account(who: &Self::AccountId) {
-		let _ = EvmSystem::create_account(who);
-	}
-
-	fn remove_account(who: &Self::AccountId) {
-		let _ = EvmSystem::remove_account(who);
-	}
-
-	fn account_nonce(who: &Self::AccountId) -> Self::Index {
-		EvmSystem::account_nonce(who)
-	}
-
-	fn inc_account_nonce(who: &Self::AccountId) {
-		EvmSystem::inc_account_nonce(who);
-	}
-}
-
 impl pallet_evm::Config for Test {
-	type AccountProvider = EvmAccountProvider;
+	type AccountProvider = EvmSystem;
 	type FeeCalculator = FixedGasPrice;
 	type GasWeightMapping = FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
