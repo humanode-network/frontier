@@ -144,6 +144,32 @@ fn transfer_works() {
 }
 
 #[test]
+fn slashing_balance_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let slashed_amount = 1000;
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		// Invoke the function under test.
+		assert!(EvmBalances::slash(&alice(), 1000).1.is_zero());
+
+		// Assert state changes.
+		assert_eq!(
+			EvmBalances::total_balance(&alice()),
+			INIT_BALANCE - slashed_amount
+		);
+		System::assert_has_event(RuntimeEvent::EvmBalances(crate::Event::Slashed {
+			who: alice(),
+			amount: slashed_amount,
+		}));
+	});
+}
+
+#[test]
 fn deposit_into_existing_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Check test preconditions.
@@ -173,27 +199,23 @@ fn deposit_into_existing_works() {
 }
 
 #[test]
-fn slashing_balance_works() {
+fn deposit_creating_works() {
 	new_test_ext().execute_with_ext(|_| {
-		// Check test preconditions.
-		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
-
-		let slashed_amount = 1000;
+		// Prepare test preconditions.
+		let charlie = H160::from_str("1000000000000000000000000000000000000003").unwrap();
+		let deposited_amount = 10;
 
 		// Set block number to enable events.
 		System::set_block_number(1);
 
 		// Invoke the function under test.
-		assert!(EvmBalances::slash(&alice(), 1000).1.is_zero());
+		let _ = EvmBalances::deposit_creating(&charlie, deposited_amount);
 
 		// Assert state changes.
-		assert_eq!(
-			EvmBalances::total_balance(&alice()),
-			INIT_BALANCE - slashed_amount
-		);
-		System::assert_has_event(RuntimeEvent::EvmBalances(crate::Event::Slashed {
-			who: alice(),
-			amount: slashed_amount,
+		assert_eq!(EvmBalances::total_balance(&charlie), deposited_amount);
+		System::assert_has_event(RuntimeEvent::EvmBalances(crate::Event::Deposit {
+			who: charlie,
+			amount: deposited_amount,
 		}));
 	});
 }
