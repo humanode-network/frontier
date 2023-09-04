@@ -720,8 +720,8 @@ impl<T: Config> Pallet<T> {
 		let account_id = T::AddressMapping::into_account_id(*address);
 
 		let nonce = T::AccountProvider::account_nonce(&account_id);
-		// keepalive `true` takes into account ExistentialDeposit as part of what's considered liquid balance.
-		let balance = T::Currency::reducible_balance(&account_id, true);
+		// keepalive `false` takes into account ExistentialDeposit as part of what's considered liquid balance.
+		let balance = T::Currency::reducible_balance(&account_id, false);
 
 		(
 			Account {
