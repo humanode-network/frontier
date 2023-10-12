@@ -33,9 +33,9 @@ pub use pallet::*;
 
 /// Account information.
 #[derive(Clone, Eq, PartialEq, Default, RuntimeDebug, Encode, Decode, TypeInfo, MaxEncodedLen)]
-pub struct AccountInfo<Index, AccountData> {
+pub struct AccountInfo<Nonce, AccountData> {
 	/// The number of transactions this account has sent.
-	pub nonce: Index,
+	pub nonce: Nonce,
 	/// The additional data that belongs to this account. Used to store the balance(s) in a lot of
 	/// chains.
 	pub data: AccountData,
@@ -67,9 +67,9 @@ pub mod pallet {
 			+ Ord
 			+ MaxEncodedLen;
 
-		/// Account index (aka nonce) type. This stores the number of previous transactions
+		/// Nonce type. This stores the number of previous transactions
 		/// associated with a sender account.
-		type Index: Parameter
+		type Nonce: Parameter
 			+ Member
 			+ MaybeSerializeDeserialize
 			+ Debug
@@ -99,7 +99,7 @@ pub mod pallet {
 		_,
 		Blake2_128Concat,
 		<T as Config>::AccountId,
-		AccountInfo<<T as Config>::Index, <T as Config>::AccountData>,
+		AccountInfo<<T as Config>::Nonce, <T as Config>::AccountData>,
 		ValueQuery,
 	>;
 
@@ -140,13 +140,13 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Retrieve the account transaction counter from storage.
-	pub fn account_nonce(who: &<T as Config>::AccountId) -> <T as Config>::Index {
+	pub fn account_nonce(who: &<T as Config>::AccountId) -> <T as Config>::Nonce {
 		FullAccount::<T>::get(who).nonce
 	}
 
 	/// Increment a particular account's nonce by 1.
 	pub fn inc_account_nonce(who: &<T as Config>::AccountId) {
-		FullAccount::<T>::mutate(who, |a| a.nonce += <T as pallet::Config>::Index::one());
+		FullAccount::<T>::mutate(who, |a| a.nonce += <T as pallet::Config>::Nonce::one());
 	}
 
 	/// Create an account.
