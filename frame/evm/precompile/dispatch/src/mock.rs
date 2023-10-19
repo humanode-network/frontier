@@ -132,14 +132,15 @@ parameter_types! {
 	pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
 }
 impl pallet_evm::Config for Test {
+	type AccountProvider = pallet_evm::NativeSystemAccountProvider<Self>;
 	type FeeCalculator = FixedGasPrice;
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
 
 	type BlockHashMapping = pallet_evm::SubstrateBlockHashMapping<Self>;
-	type CallOrigin = EnsureAddressRoot<Self::AccountId>;
+	type CallOrigin = EnsureAddressRoot<<Self::AccountProvider as pallet_evm::AccountProvider>::AccountId>;
 
-	type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
+	type WithdrawOrigin = EnsureAddressNever<<Self::AccountProvider as pallet_evm::AccountProvider>::AccountId>;
 	type AddressMapping = IdentityAddressMapping;
 	type Currency = Balances;
 
