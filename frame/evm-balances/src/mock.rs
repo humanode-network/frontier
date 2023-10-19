@@ -27,7 +27,6 @@ use frame_support::{
 use pallet_evm::{EnsureAddressNever, FixedGasWeightMapping, IdentityAddressMapping};
 use sp_core::{H160, H256, U256};
 use sp_runtime::{
-	generic,
 	traits::{BlakeTwo256, IdentityLookup},
 	BuildStorage, ConsensusEngineId,
 };
@@ -45,15 +44,10 @@ pub(crate) fn bob() -> H160 {
 	H160::from_str("2000000000000000000000000000000000000000").unwrap()
 }
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 frame_support::construct_runtime! {
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
-	{
+	pub enum Test {
 		System: frame_system,
 		EvmSystem: pallet_evm_system,
 		EvmBalances: pallet_evm_balances,
@@ -67,13 +61,12 @@ impl frame_system::Config for Test {
 	type BlockLength = ();
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
-	type Index = u64;
-	type BlockNumber = u64;
+	type Nonce = u64;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type AccountId = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = generic::Header<u64, BlakeTwo256>;
+	type Block = Block;
 	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = ConstU64<250>;
 	type DbWeight = ();
