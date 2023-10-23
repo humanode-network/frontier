@@ -24,7 +24,7 @@ use frame_support::{
 	ensure,
 	traits::{
 		fungible,
-		tokens::{DepositConsequence, WithdrawConsequence},
+		tokens::{DepositConsequence, WithdrawConsequence, Preservation, Fortitude, Provenance},
 		Currency, ExistenceRequirement,
 		ExistenceRequirement::AllowDeath,
 		Get, Imbalance, OnUnbalanced, SignedImbalance, StorageVersion, StoredMap, WithdrawReasons,
@@ -293,19 +293,19 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 
 	fn deposit_consequence(
-		_who: &<T as Config<I>>::AccountId,
+		who: &<T as Config<I>>::AccountId,
 		amount: T::Balance,
-		account: &AccountData<T::Balance>,
-		mint: bool,
+		provenance: Provenance,
 	) -> DepositConsequence {
 		if amount.is_zero() {
 			return DepositConsequence::Success;
 		}
 
-		if mint && TotalIssuance::<T, I>::get().checked_add(&amount).is_none() {
+		if provenance == Provenance::Minted && TotalIssuance::<T, I>::get().checked_add(&amount).is_none() {
 			return DepositConsequence::Overflow;
 		}
 
+		let account = Self::account(who);
 		let new_total_balance = match account.total().checked_add(&amount) {
 			Some(x) => x,
 			None => return DepositConsequence::Overflow,
@@ -322,9 +322,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 
 	fn withdraw_consequence(
-		_who: &<T as Config<I>>::AccountId,
+		who: &<T as Config<I>>::AccountId,
 		amount: T::Balance,
-		account: &AccountData<T::Balance>,
 	) -> WithdrawConsequence<T::Balance> {
 		if amount.is_zero() {
 			return WithdrawConsequence::Success;
@@ -334,9 +333,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			return WithdrawConsequence::Underflow;
 		}
 
+		let account = Self::account(who);
 		let new_total_balance = match account.total().checked_sub(&amount) {
 			Some(x) => x,
-			None => return WithdrawConsequence::NoFunds,
+			None => return WithdrawConsequence::BalanceLow,
 		};
 
 		// Provider restriction - total account balance cannot be reduced to zero if it cannot
@@ -351,7 +351,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		// Enough free funds to have them be reduced.
 		match account.free.checked_sub(&amount) {
 			Some(_) => WithdrawConsequence::Success,
-			None => WithdrawConsequence::NoFunds,
+			None => WithdrawConsequence::BalanceLow,
 		}
 	}
 }
@@ -719,37 +719,44 @@ impl<T: Config<I>, I: 'static> fungible::Inspect<<T as Config<I>>::AccountId> fo
 		T::ExistentialDeposit::get()
 	}
 
+	fn total_balance(who: &<T as Config<I>>::AccountId) -> Self::Balance {
+		Self::account(who).total()
+	}
+
 	fn balance(who: &<T as Config<I>>::AccountId) -> Self::Balance {
 		Self::account(who).total()
 	}
 
-	fn reducible_balance(who: &<T as Config<I>>::AccountId, keep_alive: bool) -> Self::Balance {
+	fn reducible_balance(
+		who: &<T as Config<I>>::AccountId,
+		preservation: Preservation,
+		_force: Fortitude,
+	) -> Self::Balance {
 		let a = Self::account(who);
 		// Liquid balance is what is neither reserved nor locked/frozen.
 		let liquid = a.free;
-		if !keep_alive {
-			liquid
-		} else {
-			// `must_remain_to_exist` is the part of liquid balance which must remain to keep total
-			// over ED.
-			let must_remain_to_exist =
-				T::ExistentialDeposit::get().saturating_sub(a.total() - liquid);
-			liquid.saturating_sub(must_remain_to_exist)
+		match preservation {
+			Preservation::Expendable => liquid,
+			_ => {
+				let must_remain_to_exist =
+					T::ExistentialDeposit::get().saturating_sub(a.total() - liquid);
+				liquid.saturating_sub(must_remain_to_exist)
+			}
 		}
 	}
 
 	fn can_deposit(
 		who: &<T as Config<I>>::AccountId,
 		amount: Self::Balance,
-		mint: bool,
+		provenance: Provenance,
 	) -> DepositConsequence {
-		Self::deposit_consequence(who, amount, &Self::account(who), mint)
+		Self::deposit_consequence(who, amount, provenance)
 	}
 
 	fn can_withdraw(
 		who: &<T as Config<I>>::AccountId,
 		amount: Self::Balance,
 	) -> WithdrawConsequence<Self::Balance> {
-		Self::withdraw_consequence(who, amount, &Self::account(who))
+		Self::withdraw_consequence(who, amount)
 	}
 }
