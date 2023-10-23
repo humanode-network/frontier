@@ -49,6 +49,7 @@ type Block = frame_system::mocking::MockBlock<Test>;
 frame_support::construct_runtime! {
 	pub enum Test {
 		System: frame_system,
+		Timestamp: pallet_timestamp,
 		EvmSystem: pallet_evm_system,
 		EvmBalances: pallet_evm_balances,
 		EVM: pallet_evm,
@@ -84,7 +85,7 @@ impl frame_system::Config for Test {
 impl pallet_evm_system::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type AccountId = H160;
-	type Index = u64;
+	type Nonce = u64;
 	type AccountData = AccountData<u64>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
@@ -114,7 +115,7 @@ pub struct FixedGasPrice;
 impl pallet_evm::FeeCalculator for FixedGasPrice {
 	fn min_gas_price() -> (U256, Weight) {
 		// Return some meaningful gas price and weight
-		(1_000_000_000u128.into(), Weight::from_ref_time(7u64))
+		(1_000_000_000u128.into(), Weight::from_parts(7u64, 0))
 	}
 }
 
@@ -129,9 +130,13 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 	}
 }
 
+const BLOCK_GAS_LIMIT: u64 = 150_000_000;
+const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
+
 parameter_types! {
-	pub BlockGasLimit: U256 = U256::max_value();
-	pub WeightPerGas: Weight = Weight::from_ref_time(20_000);
+	pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
+	pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
+	pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
 }
 
 impl pallet_evm::Config for Test {
@@ -155,13 +160,16 @@ impl pallet_evm::Config for Test {
 	type OnChargeTransaction = ();
 	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated;
+	type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
+	type Timestamp = Timestamp;
+	type WeightInfo = ();
 }
 
 /// Build test externalities from the custom genesis.
 /// Using this call requires manual assertions on the genesis init logic.
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	// Build genesis.
-	let config = GenesisConfig {
+	let config = RuntimeGenesisConfig {
 		evm: EVMConfig {
 			accounts: {
 				let mut map = BTreeMap::new();
@@ -175,6 +183,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 				map.insert(bob(), init_genesis_account);
 				map
 			},
+			..Default::default()
 		},
 		..Default::default()
 	};
@@ -201,7 +210,7 @@ pub trait TestExternalitiesExt {
 		E: for<'e> FnOnce(&'e ()) -> R;
 }
 
-impl TestExternalitiesExt for frame_support::sp_io::TestExternalities {
+impl TestExternalitiesExt for sp_io::TestExternalities {
 	fn execute_with_ext<R, E>(&mut self, execute: E) -> R
 	where
 		E: for<'e> FnOnce(&'e ()) -> R,
