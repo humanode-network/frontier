@@ -55,6 +55,7 @@ frame_support::construct_runtime! {
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system,
+		Timestamp: pallet_timestamp,
 		EvmSystem: pallet_evm_system,
 		EvmBalances: pallet_evm_balances,
 		EVM: pallet_evm,
@@ -162,6 +163,8 @@ impl pallet_evm::Config for Test {
 	type OnChargeTransaction = ();
 	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated;
+	type Timestamp = Timestamp;
+	type WeightInfo = ();
 }
 
 /// Build test externalities from the custom genesis.
