@@ -18,8 +18,8 @@
 //! EVM stack-based runner.
 
 use crate::{
-	runner::Runner as RunnerT, AccountCodes, AccountCodesMetadata, AccountStorages, AddressMapping,
-	BalanceOf, BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction,
+	runner::Runner as RunnerT, AccountCodes, AccountCodesMetadata, AccountProvider, AccountStorages,
+	AddressMapping, BalanceOf, BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction,
 	OnCreate, Pallet, RunnerError, Weight,
 };
 use evm::{
@@ -830,7 +830,7 @@ where
 
 	fn inc_nonce(&mut self, address: H160) -> Result<(), ExitError> {
 		let account_id = T::AddressMapping::into_account_id(address);
-		frame_system::Pallet::<T>::inc_account_nonce(&account_id);
+		T::AccountProvider::inc_account_nonce(&account_id);
 		Ok(())
 	}
 
