@@ -76,7 +76,6 @@ pub mod pallet {
 
 	/// The full account information for a particular account ID.
 	#[pallet::storage]
-	#[pallet::getter(fn full_account)]
 	pub type Account<T: Config> = StorageMap<
 		_,
 		Blake2_128Concat,
