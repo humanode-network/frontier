@@ -4,6 +4,7 @@ members = [
 	"frame/dynamic-fee",
 	"frame/ethereum",
 	"frame/evm",
+	"frame/evm-balances",
 	"frame/evm-chain-id",
 	"frame/evm-system",
 	"frame/hotfix-sufficients",
@@ -150,6 +151,7 @@ pallet-base-fee = { version = "1.0.0", path = "frame/base-fee", default-features
 pallet-dynamic-fee = { version = "4.0.0-dev", path = "frame/dynamic-fee", default-features = false }
 pallet-ethereum = { version = "4.0.0-dev", path = "frame/ethereum", default-features = false }
 pallet-evm = { version = "6.0.0-dev", path = "frame/evm", default-features = false }
+pallet-evm-balances = { version = "1.0.0-dev", path = "frame/evm-balances", default-features = false }
 pallet-evm-chain-id = { version = "1.0.0-dev", path = "frame/evm-chain-id", default-features = false }
 pallet-evm-system = { version = "1.0.0-dev", path = "frame/evm-system", default-features = false }
 pallet-evm-precompile-modexp = { version = "2.0.0-dev", path = "frame/evm/precompile/modexp", default-features = false }
