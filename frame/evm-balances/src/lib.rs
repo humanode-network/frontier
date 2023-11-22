@@ -92,13 +92,11 @@ pub mod pallet {
 
 	/// The total units issued.
 	#[pallet::storage]
-	#[pallet::getter(fn total_issuance)]
 	#[pallet::whitelist_storage]
 	pub type TotalIssuance<T: Config<I>, I: 'static = ()> = StorageValue<_, T::Balance, ValueQuery>;
 
 	/// The total units of outstanding deactivated balance.
 	#[pallet::storage]
-	#[pallet::getter(fn inactive_issuance)]
 	#[pallet::whitelist_storage]
 	pub type InactiveIssuance<T: Config<I>, I: 'static = ()> =
 		StorageValue<_, T::Balance, ValueQuery>;
