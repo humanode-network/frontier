@@ -26,21 +26,23 @@ where
 	}
 
 	fn active_issuance() -> Self::Balance {
-		TotalIssuance::<T, I>::get().saturating_sub(InactiveIssuance::<T, I>::get())
+		<Self as fungible::Inspect<_>>::active_issuance()
 	}
 
 	fn deactivate(amount: Self::Balance) {
-		InactiveIssuance::<T, I>::mutate(|b| b.saturating_accrue(amount));
+		<Self as fungible::Unbalanced<_>>::deactivate(amount);
 	}
 
 	fn reactivate(amount: Self::Balance) {
-		InactiveIssuance::<T, I>::mutate(|b| b.saturating_reduce(amount));
+		<Self as fungible::Unbalanced<_>>::reactivate(amount);
 	}
 
 	fn minimum_balance() -> Self::Balance {
 		T::ExistentialDeposit::get()
 	}
 
+	// Burn funds from the total issuance, returning a positive imbalance for the amount burned.
+	// Is a no-op if amount to be burned is zero.
 	fn burn(mut amount: Self::Balance) -> Self::PositiveImbalance {
 		if amount.is_zero() {
 			return PositiveImbalance::zero();
@@ -54,6 +56,9 @@ where
 		PositiveImbalance::new(amount)
 	}
 
+	// Create new funds into the total issuance, returning a negative imbalance
+	// for the amount issued.
+	// Is a no-op if amount to be issued it zero.
 	fn issue(mut amount: Self::Balance) -> Self::NegativeImbalance {
 		if amount.is_zero() {
 			return NegativeImbalance::zero();
@@ -72,6 +77,7 @@ where
 	}
 
 	// We don't have any existing withdrawal restrictions like locked and reserved balance.
+	// Is a no-op if amount to be withdrawn is zero.
 	fn ensure_can_withdraw(
 		_who: &<T as Config<I>>::AccountId,
 		_amount: T::Balance,
@@ -81,6 +87,8 @@ where
 		Ok(())
 	}
 
+	// Transfer some free balance from `transactor` to `dest`, respecting existence requirements.
+	// Is a no-op if value to be transferred is zero or the `transactor` is the same as `dest`.
 	fn transfer(
 		transactor: &<T as Config<I>>::AccountId,
 		dest: &<T as Config<I>>::AccountId,
@@ -88,56 +96,13 @@ where
 		existence_requirement: ExistenceRequirement,
 	) -> DispatchResult {
 		if value.is_zero() || transactor == dest {
-			return Ok(());
+			return Ok(())
 		}
-
-		Self::try_mutate_account_with_dust(
-			dest,
-			|to_account, _| -> Result<DustCleaner<T, I>, DispatchError> {
-				Self::try_mutate_account_with_dust(
-					transactor,
-					|from_account, _| -> DispatchResult {
-						from_account.free = from_account
-							.free
-							.checked_sub(&value)
-							.ok_or(Error::<T, I>::InsufficientBalance)?;
-
-						to_account.free = to_account
-							.free
-							.checked_add(&value)
-							.ok_or(ArithmeticError::Overflow)?;
-
-						let ed = T::ExistentialDeposit::get();
-						ensure!(to_account.total() >= ed, Error::<T, I>::ExistentialDeposit);
-
-						Self::ensure_can_withdraw(
-							transactor,
-							value,
-							WithdrawReasons::TRANSFER,
-							from_account.free,
-						)
-						.map_err(|_| Error::<T, I>::LiquidityRestrictions)?;
-
-						let allow_death = existence_requirement == ExistenceRequirement::AllowDeath;
-						ensure!(
-							allow_death || from_account.total() >= ed,
-							Error::<T, I>::KeepAlive
-						);
-
-						Ok(())
-					},
-				)
-				.map(|(_, maybe_dust_cleaner)| maybe_dust_cleaner)
-			},
-		)?;
-
-		// Emit transfer event.
-		Self::deposit_event(Event::Transfer {
-			from: transactor.clone(),
-			to: dest.clone(),
-			amount: value,
-		});
-
+		let keep_alive = match existence_requirement {
+			ExistenceRequirement::KeepAlive => Preservation::Preserve,
+			ExistenceRequirement::AllowDeath => Preservation::Expendable,
+		};
+		<Self as fungible::Mutate<_>>::transfer(transactor, dest, value, keep_alive)?;
 		Ok(())
 	}
 
@@ -157,48 +122,32 @@ where
 		if value.is_zero() {
 			return (NegativeImbalance::zero(), Zero::zero());
 		}
+
 		if Self::total_balance(who).is_zero() {
 			return (NegativeImbalance::zero(), value);
 		}
 
-		for attempt in 0..2 {
-			match Self::try_mutate_account(
-				who,
-				|account,
-				 _is_new|
-				 -> Result<(Self::NegativeImbalance, Self::Balance), DispatchError> {
-					// Best value is the most amount we can slash following liveness rules.
-					let best_value = match attempt {
-						// First attempt we try to slash the full amount, and see if liveness issues
-						// happen.
-						0 => value,
-						// If acting as a critical provider (i.e. first attempt failed), then slash
-						// as much as possible while leaving at least at ED.
-						_ => value.min(account.free.saturating_sub(T::ExistentialDeposit::get())),
-					};
-
-					let free_slash = cmp::min(account.free, best_value);
-					account.free -= free_slash; // Safe because of above check
-
-					Ok((
-						NegativeImbalance::new(free_slash),
-						value - free_slash, // Safe because value is gt or eq to total slashed
-					))
-				},
-			) {
-				Ok((imbalance, not_slashed)) => {
-					Self::deposit_event(Event::Slashed {
-						who: who.clone(),
-						amount: value.saturating_sub(not_slashed),
-					});
-					return (imbalance, not_slashed);
-				}
-				Err(_) => (),
-			}
-		}
-
-		// Should never get here. But we'll be defensive anyway.
-		(Self::NegativeImbalance::zero(), value)
+		let result = match Self::try_mutate_account_handling_dust(
+			who,
+			|account, _is_new| -> Result<(Self::NegativeImbalance, Self::Balance), DispatchError> {
+				// Best value is the most amount we can slash following liveness rules.
+				let ed = T::ExistentialDeposit::get();
+				let actual = value.min(account.free.saturating_sub(ed));
+				account.free.saturating_reduce(actual);
+				let remaining = value.saturating_sub(actual);
+				Ok((NegativeImbalance::new(actual), remaining))
+			},
+		) {
+			Ok((imbalance, remaining)) => {
+				Self::deposit_event(Event::Slashed {
+					who: who.clone(),
+					amount: value.saturating_sub(remaining),
+				});
+				(imbalance, remaining)
+			},
+			Err(_) => (Self::NegativeImbalance::zero(), value),
+		};
+		result
 	}
 
 	/// Deposit some `value` into the free balance of an existing target account `who`.
@@ -212,18 +161,12 @@ where
 			return Ok(PositiveImbalance::zero());
 		}
 
-		Self::try_mutate_account(
+		Self::try_mutate_account_handling_dust(
 			who,
 			|account, is_new| -> Result<Self::PositiveImbalance, DispatchError> {
 				ensure!(!is_new, Error::<T, I>::DeadAccount);
-				account.free = account
-					.free
-					.checked_add(&value)
-					.ok_or(ArithmeticError::Overflow)?;
-				Self::deposit_event(Event::Deposit {
-					who: who.clone(),
-					amount: value,
-				});
+				account.free = account.free.checked_add(&value).ok_or(ArithmeticError::Overflow)?;
+				Self::deposit_event(Event::Deposit { who: who.clone(), amount: value });
 				Ok(PositiveImbalance::new(value))
 			},
 		)
@@ -246,7 +189,7 @@ where
 			return Self::PositiveImbalance::zero();
 		}
 
-		Self::try_mutate_account(
+		Self::try_mutate_account_handling_dust(
 			who,
 			|account, is_new| -> Result<Self::PositiveImbalance, DispatchError> {
 				let ed = T::ExistentialDeposit::get();
@@ -259,10 +202,7 @@ where
 					None => return Ok(Self::PositiveImbalance::zero()),
 				};
 
-				Self::deposit_event(Event::Deposit {
-					who: who.clone(),
-					amount: value,
-				});
+				Self::deposit_event(Event::Deposit { who: who.clone(), amount: value });
 				Ok(PositiveImbalance::new(value))
 			},
 		)
@@ -282,31 +222,23 @@ where
 			return Ok(NegativeImbalance::zero());
 		}
 
-		Self::try_mutate_account(
+		Self::try_mutate_account_handling_dust(
 			who,
 			|account, _| -> Result<Self::NegativeImbalance, DispatchError> {
-				let new_free_account = account
-					.free
-					.checked_sub(&value)
-					.ok_or(Error::<T, I>::InsufficientBalance)?;
+				let new_free_account =
+					account.free.checked_sub(&value).ok_or(Error::<T, I>::InsufficientBalance)?;
 
 				// bail if we need to keep the account alive and this would kill it.
 				let ed = T::ExistentialDeposit::get();
 				let would_be_dead = new_free_account < ed;
 				let would_kill = would_be_dead && account.free >= ed;
-				ensure!(
-					liveness == AllowDeath || !would_kill,
-					Error::<T, I>::KeepAlive
-				);
+				ensure!(liveness == AllowDeath || !would_kill, Error::<T, I>::Expendability);
 
 				Self::ensure_can_withdraw(who, value, reasons, new_free_account)?;
 
 				account.free = new_free_account;
 
-				Self::deposit_event(Event::Withdraw {
-					who: who.clone(),
-					amount: value,
-				});
+				Self::deposit_event(Event::Withdraw { who: who.clone(), amount: value });
 				Ok(NegativeImbalance::new(value))
 			},
 		)
@@ -317,13 +249,12 @@ where
 		who: &<T as Config<I>>::AccountId,
 		value: Self::Balance,
 	) -> SignedImbalance<Self::Balance, Self::PositiveImbalance> {
-		Self::try_mutate_account(
+		Self::try_mutate_account_handling_dust(
 			who,
 			|account,
 			 is_new|
 			 -> Result<SignedImbalance<Self::Balance, Self::PositiveImbalance>, DispatchError> {
 				let ed = T::ExistentialDeposit::get();
-				let total = value;
 				// If we're attempting to set an existing account to less than ED, then
 				// bypass the entire operation. It's a no-op if you follow it through, but
 				// since this is an instance where we might account for a negative imbalance
@@ -331,7 +262,7 @@ where
 				// equal and opposite cause (returned as an Imbalance), then in the
 				// instance that there's no other accounts on the system at all, we might
 				// underflow the issuance and our arithmetic will be off.
-				ensure!(total >= ed || !is_new, Error::<T, I>::ExistentialDeposit);
+				ensure!(value >= ed || !is_new, Error::<T, I>::ExistentialDeposit);
 
 				let imbalance = if account.free <= value {
 					SignedImbalance::Positive(PositiveImbalance::new(value - account.free))
@@ -339,10 +270,7 @@ where
 					SignedImbalance::Negative(NegativeImbalance::new(account.free - value))
 				};
 				account.free = value;
-				Self::deposit_event(Event::BalanceSet {
-					who: who.clone(),
-					free: account.free,
-				});
+				Self::deposit_event(Event::BalanceSet { who: who.clone(), free: account.free });
 				Ok(imbalance)
 			},
 		)
