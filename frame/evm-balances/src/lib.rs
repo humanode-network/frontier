@@ -8,7 +8,7 @@
 use frame_support::{
 	ensure,
 	traits::{
-		fungible,
+		fungible::{self, Credit},
 		tokens::{DepositConsequence, WithdrawConsequence, Preservation, Fortitude, Provenance},
 		Currency, ExistenceRequirement,
 		ExistenceRequirement::AllowDeath,
@@ -92,7 +92,7 @@ pub mod pallet {
 		type AccountStore: StoredMap<<Self as Config<I>>::AccountId, AccountData<Self::Balance>>;
 
 		/// Handler for the unbalanced reduction when removing a dust account.
-		type DustRemoval: OnUnbalanced<NegativeImbalance<Self, I>>;
+		type DustRemoval: OnUnbalanced<Credit<<Self as Config<I>>::AccountId, Pallet<Self, I>>>;
 	}
 
 	/// The total units issued.
@@ -198,28 +198,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	/// Get all data information for an account.
 	fn account(who: &<T as Config<I>>::AccountId) -> AccountData<T::Balance> {
 		T::AccountStore::get(who)
-	}
-
-	/// Mutate an account to some new value, or delete it entirely with `None`. Will enforce
-	/// `ExistentialDeposit` law, annulling the account as needed.
-	///
-	/// It returns the result from the closure. Any dust is handled through the low-level
-	/// `fungible::Unbalanced` trap-door for legacy dust management.
-	///
-	/// NOTE: Doesn't do any preparatory work for creating a new account, so should only be used
-	/// when it is known that the account already exists.
-	///
-	/// NOTE: LOW-LEVEL: This will not attempt to maintain total issuance. It is expected that
-	/// the caller will do this.
-	pub(crate) fn mutate_account_handling_dust<R>(
-		who: &<T as Config<I>>::AccountId,
-		f: impl FnOnce(&mut AccountData<T::Balance>) -> R,
-	) -> Result<R, DispatchError> {
-		let (r, maybe_dust) = Self::mutate_account(who, f)?;
-		if let Some(dust) = maybe_dust {
-			<Self as fungible::Unbalanced<_>>::handle_raw_dust(dust);
-		}
-		Ok(r)
 	}
 
 	/// Mutate an account to some new value, or delete it entirely with `None`. Will enforce
