@@ -69,12 +69,18 @@ impl<T: Config<I>, I: 'static> fungible::Unbalanced<<T as Config<I>>::AccountId>
 		who: &<T as Config<I>>::AccountId,
 		amount: Self::Balance,
 	) -> Result<Option<Self::Balance>, DispatchError> {
-		let max_reduction =
-			<Self as fungible::Inspect<_>>::reducible_balance(who, Preservation::Expendable, Fortitude::Force);
+		let max_reduction = <Self as fungible::Inspect<_>>::reducible_balance(
+			who,
+			Preservation::Expendable,
+			Fortitude::Force,
+		);
 		let (result, maybe_dust) = Self::mutate_account(who, |account| -> DispatchResult {
 			// Make sure the reduction (if there is one) is no more than the maximum allowed.
 			let reduction = account.free.saturating_sub(amount);
-			ensure!(reduction <= max_reduction, Error::<T, I>::InsufficientBalance);
+			ensure!(
+				reduction <= max_reduction,
+				Error::<T, I>::InsufficientBalance
+			);
 
 			account.free = amount;
 			Ok(())
@@ -98,22 +104,38 @@ impl<T: Config<I>, I: 'static> fungible::Unbalanced<<T as Config<I>>::AccountId>
 
 impl<T: Config<I>, I: 'static> fungible::Mutate<<T as Config<I>>::AccountId> for Pallet<T, I> {
 	fn done_mint_into(who: &<T as Config<I>>::AccountId, amount: Self::Balance) {
-		Self::deposit_event(Event::Minted { who: who.clone(), amount });
+		Self::deposit_event(Event::Minted {
+			who: who.clone(),
+			amount,
+		});
 	}
 
 	fn done_burn_from(who: &<T as Config<I>>::AccountId, amount: Self::Balance) {
-		Self::deposit_event(Event::Burned { who: who.clone(), amount });
+		Self::deposit_event(Event::Burned {
+			who: who.clone(),
+			amount,
+		});
 	}
 
 	fn done_shelve(who: &<T as Config<I>>::AccountId, amount: Self::Balance) {
-		Self::deposit_event(Event::Suspended { who: who.clone(), amount });
+		Self::deposit_event(Event::Suspended {
+			who: who.clone(),
+			amount,
+		});
 	}
 
 	fn done_restore(who: &<T as Config<I>>::AccountId, amount: Self::Balance) {
-		Self::deposit_event(Event::Restored { who: who.clone(), amount });
+		Self::deposit_event(Event::Restored {
+			who: who.clone(),
+			amount,
+		});
 	}
 
-	fn done_transfer(source: &<T as Config<I>>::AccountId, dest: &<T as Config<I>>::AccountId, amount: Self::Balance) {
+	fn done_transfer(
+		source: &<T as Config<I>>::AccountId,
+		dest: &<T as Config<I>>::AccountId,
+		amount: Self::Balance,
+	) {
 		Self::deposit_event(Event::Transfer {
 			from: source.clone(),
 			to: dest.clone(),
@@ -127,11 +149,17 @@ impl<T: Config<I>, I: 'static> fungible::Balanced<<T as Config<I>>::AccountId> f
 	type OnDropDebt = fungible::IncreaseIssuance<<T as Config<I>>::AccountId, Self>;
 
 	fn done_deposit(who: &<T as Config<I>>::AccountId, amount: Self::Balance) {
-		Self::deposit_event(Event::Deposit { who: who.clone(), amount });
+		Self::deposit_event(Event::Deposit {
+			who: who.clone(),
+			amount,
+		});
 	}
 
 	fn done_withdraw(who: &<T as Config<I>>::AccountId, amount: Self::Balance) {
-		Self::deposit_event(Event::Withdraw { who: who.clone(), amount });
+		Self::deposit_event(Event::Withdraw {
+			who: who.clone(),
+			amount,
+		});
 	}
 
 	fn done_issue(amount: Self::Balance) {

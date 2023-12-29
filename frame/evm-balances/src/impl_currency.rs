@@ -1,5 +1,7 @@
 //! Currency trait implementation.
 
+use frame_support::traits::Currency;
+
 use super::*;
 
 impl<T: Config<I>, I: 'static> Currency<<T as Config<I>>::AccountId> for Pallet<T, I>
@@ -96,7 +98,7 @@ where
 		existence_requirement: ExistenceRequirement,
 	) -> DispatchResult {
 		if value.is_zero() || transactor == dest {
-			return Ok(())
+			return Ok(());
 		}
 		let keep_alive = match existence_requirement {
 			ExistenceRequirement::KeepAlive => Preservation::Preserve,
@@ -144,7 +146,7 @@ where
 					amount: value.saturating_sub(remaining),
 				});
 				(imbalance, remaining)
-			},
+			}
 			Err(_) => (Self::NegativeImbalance::zero(), value),
 		};
 		result
@@ -165,8 +167,14 @@ where
 			who,
 			|account, is_new| -> Result<Self::PositiveImbalance, DispatchError> {
 				ensure!(!is_new, Error::<T, I>::DeadAccount);
-				account.free = account.free.checked_add(&value).ok_or(ArithmeticError::Overflow)?;
-				Self::deposit_event(Event::Deposit { who: who.clone(), amount: value });
+				account.free = account
+					.free
+					.checked_add(&value)
+					.ok_or(ArithmeticError::Overflow)?;
+				Self::deposit_event(Event::Deposit {
+					who: who.clone(),
+					amount: value,
+				});
 				Ok(PositiveImbalance::new(value))
 			},
 		)
@@ -202,7 +210,10 @@ where
 					None => return Ok(Self::PositiveImbalance::zero()),
 				};
 
-				Self::deposit_event(Event::Deposit { who: who.clone(), amount: value });
+				Self::deposit_event(Event::Deposit {
+					who: who.clone(),
+					amount: value,
+				});
 				Ok(PositiveImbalance::new(value))
 			},
 		)
@@ -225,20 +236,28 @@ where
 		Self::try_mutate_account_handling_dust(
 			who,
 			|account, _| -> Result<Self::NegativeImbalance, DispatchError> {
-				let new_free_account =
-					account.free.checked_sub(&value).ok_or(Error::<T, I>::InsufficientBalance)?;
+				let new_free_account = account
+					.free
+					.checked_sub(&value)
+					.ok_or(Error::<T, I>::InsufficientBalance)?;
 
 				// bail if we need to keep the account alive and this would kill it.
 				let ed = T::ExistentialDeposit::get();
 				let would_be_dead = new_free_account < ed;
 				let would_kill = would_be_dead && account.free >= ed;
-				ensure!(liveness == AllowDeath || !would_kill, Error::<T, I>::Expendability);
+				ensure!(
+					liveness == ExistenceRequirement::AllowDeath || !would_kill,
+					Error::<T, I>::Expendability
+				);
 
 				Self::ensure_can_withdraw(who, value, reasons, new_free_account)?;
 
 				account.free = new_free_account;
 
-				Self::deposit_event(Event::Withdraw { who: who.clone(), amount: value });
+				Self::deposit_event(Event::Withdraw {
+					who: who.clone(),
+					amount: value,
+				});
 				Ok(NegativeImbalance::new(value))
 			},
 		)
@@ -270,7 +289,10 @@ where
 					SignedImbalance::Negative(NegativeImbalance::new(account.free - value))
 				};
 				account.free = value;
-				Self::deposit_event(Event::BalanceSet { who: who.clone(), free: account.free });
+				Self::deposit_event(Event::BalanceSet {
+					who: who.clone(),
+					free: account.free,
+				});
 				Ok(imbalance)
 			},
 		)

@@ -9,10 +9,9 @@ use frame_support::{
 	ensure,
 	traits::{
 		fungible,
-		tokens::{DepositConsequence, WithdrawConsequence, Preservation, Fortitude, Provenance},
-		Currency, ExistenceRequirement,
-		ExistenceRequirement::AllowDeath,
-		Get, Imbalance, OnUnbalanced, SignedImbalance, StorageVersion, StoredMap, WithdrawReasons,
+		tokens::{DepositConsequence, Fortitude, Preservation, Provenance, WithdrawConsequence},
+		ExistenceRequirement, Get, Imbalance, OnUnbalanced, SignedImbalance, StorageVersion,
+		StoredMap, WithdrawReasons,
 	},
 };
 use scale_codec::{Codec, Decode, Encode, MaxEncodedLen};
@@ -149,22 +148,22 @@ pub mod pallet {
 		/// Some amount was minted into an account.
 		Minted {
 			who: <T as Config<I>>::AccountId,
-			amount: T::Balance
+			amount: T::Balance,
 		},
 		/// Some amount was burned from an account.
 		Burned {
 			who: <T as Config<I>>::AccountId,
-			amount: T::Balance
+			amount: T::Balance,
 		},
 		/// Some amount was suspended from an account (it can be restored later).
 		Suspended {
 			who: <T as Config<I>>::AccountId,
-			amount: T::Balance
+			amount: T::Balance,
 		},
 		/// Some amount was restored into an account.
 		Restored {
 			who: <T as Config<I>>::AccountId,
-			amount: T::Balance
+			amount: T::Balance,
 		},
 		/// Total issuance was increased by `amount`, creating a credit to be balanced.
 		Issued { amount: T::Balance },
@@ -282,9 +281,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 						Some(account.free)
 					}
 				} else {
-					assert!(
-						account.free.is_zero() || account.free >= T::ExistentialDeposit::get()
-					);
+					assert!(account.free.is_zero() || account.free >= T::ExistentialDeposit::get());
 					*maybe_account = Some(account);
 					None
 				};
@@ -300,7 +297,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				});
 			}
 			if let Some(amount) = maybe_dust {
-				Pallet::<T, I>::deposit_event(Event::DustLost { account: who.clone(), amount });
+				Pallet::<T, I>::deposit_event(Event::DustLost {
+					account: who.clone(),
+					amount,
+				});
 			}
 			(result, maybe_dust)
 		})
@@ -315,7 +315,9 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			return DepositConsequence::Success;
 		}
 
-		if provenance == Provenance::Minted && TotalIssuance::<T, I>::get().checked_add(&amount).is_none() {
+		if provenance == Provenance::Minted
+			&& TotalIssuance::<T, I>::get().checked_add(&amount).is_none()
+		{
 			return DepositConsequence::Overflow;
 		}
 
