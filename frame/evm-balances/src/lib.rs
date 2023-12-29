@@ -8,7 +8,7 @@
 use frame_support::{
 	ensure,
 	traits::{
-		fungible::{self, Credit},
+		fungible,
 		tokens::{DepositConsequence, WithdrawConsequence, Preservation, Fortitude, Provenance},
 		Currency, ExistenceRequirement,
 		ExistenceRequirement::AllowDeath,
@@ -92,7 +92,7 @@ pub mod pallet {
 		type AccountStore: StoredMap<<Self as Config<I>>::AccountId, AccountData<Self::Balance>>;
 
 		/// Handler for the unbalanced reduction when removing a dust account.
-		type DustRemoval: OnUnbalanced<Credit<<Self as Config<I>>::AccountId, Pallet<Self, I>>>;
+		type DustRemoval: OnUnbalanced<NegativeImbalance<Self, I>>;
 	}
 
 	/// The total units issued.

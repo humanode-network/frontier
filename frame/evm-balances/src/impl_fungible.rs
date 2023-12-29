@@ -63,7 +63,7 @@ impl<T: Config<I>, I: 'static> fungible::Inspect<<T as Config<I>>::AccountId> fo
 
 impl<T: Config<I>, I: 'static> fungible::Unbalanced<<T as Config<I>>::AccountId> for Pallet<T, I> {
 	fn handle_dust(dust: fungible::Dust<<T as Config<I>>::AccountId, Self>) {
-		T::DustRemoval::on_unbalanced(dust.into_credit());
+		T::DustRemoval::on_unbalanced(NegativeImbalance::new(dust.0));
 	}
 	fn write_balance(
 		who: &<T as Config<I>>::AccountId,
