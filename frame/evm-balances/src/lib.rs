@@ -361,7 +361,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		// then this will need to adapt accordingly.
 		let ed = T::ExistentialDeposit::get();
 		if new_total_balance < ed {
-			return WithdrawConsequence::WouldDie;
+			return WithdrawConsequence::ReducedToZero(new_total_balance);
 		}
 
 		// Enough free funds to have them be reduced.
