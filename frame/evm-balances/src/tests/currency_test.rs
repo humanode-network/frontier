@@ -1,49 +1,13 @@
-//! Unit tests.
+//! Tests regarding the functionality of the `Currency` trait set implementations.
 
-use frame_support::{assert_noop, assert_ok, weights::Weight};
-use pallet_evm::{FeeCalculator, Runner, FixedGasWeightMapping, GasWeightMapping};
-use sp_core::{H160, U256};
-use sp_runtime::traits::UniqueSaturatedInto;
+use frame_support::{assert_noop, assert_ok, traits::Currency};
+use sp_core::H160;
 use sp_std::str::FromStr;
 
 use crate::{mock::*, *};
 
 #[test]
-fn basic_setup_works() {
-	new_test_ext().execute_with_ext(|_| {
-		// Check the accounts.
-		assert_eq!(
-			<EvmBalances>::account(&alice()),
-			account_data::AccountData { free: INIT_BALANCE }
-		);
-		assert_eq!(
-			<EvmBalances>::account(&bob()),
-			account_data::AccountData { free: INIT_BALANCE }
-		);
-
-		// Check the total balance value.
-		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
-	});
-}
-
-#[test]
-fn currency_total_balance_works() {
-	new_test_ext().execute_with_ext(|_| {
-		// Check the total balance value.
-		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
-	});
-}
-
-#[test]
-fn currency_can_slash_works() {
-	new_test_ext().execute_with_ext(|_| {
-		// Check possible slashing.
-		assert!(EvmBalances::can_slash(&alice(), 100));
-	});
-}
-
-#[test]
-fn currency_total_issuance_works() {
+fn total_issuance_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Check the total issuance value.
 		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
@@ -51,7 +15,37 @@ fn currency_total_issuance_works() {
 }
 
 #[test]
-fn currency_active_issuance_works() {
+fn total_balance_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check the total balance value.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+	});
+}
+
+#[test]
+fn free_balance_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check the free balance value.
+		assert_eq!(EvmBalances::free_balance(&alice()), INIT_BALANCE);
+	});
+}
+
+#[test]
+fn can_slash_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check possible slashing if slashing value is less than current balance.
+		assert!(EvmBalances::can_slash(&alice(), 100));
+
+		// Check possible slashing if slashing value is equal to current balance.
+		assert!(EvmBalances::can_slash(&alice(), INIT_BALANCE));
+
+		// Check slashing restriction if slashing value that is greater than current balance.
+		assert!(!EvmBalances::can_slash(&alice(), INIT_BALANCE + 1));
+	});
+}
+
+#[test]
+fn active_issuance_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Check the active issuance value.
 		assert_eq!(EvmBalances::active_issuance(), 2 * INIT_BALANCE);
@@ -59,7 +53,7 @@ fn currency_active_issuance_works() {
 }
 
 #[test]
-fn currency_deactivate_reactivate_works() {
+fn deactivate_reactivate_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Check test preconditions.
 		assert_eq!(<InactiveIssuance<Test>>::get(), 0);
@@ -68,6 +62,7 @@ fn currency_deactivate_reactivate_works() {
 		EvmBalances::deactivate(100);
 		// Assert state changes.
 		assert_eq!(<InactiveIssuance<Test>>::get(), 100);
+
 		// Reactivate some balance.
 		EvmBalances::reactivate(40);
 		// Assert state changes.
@@ -76,7 +71,15 @@ fn currency_deactivate_reactivate_works() {
 }
 
 #[test]
-fn currency_burn_works() {
+fn minimum_balance_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check the minimum balance value.
+		assert_eq!(EvmBalances::minimum_balance(), 1);
+	});
+}
+
+#[test]
+fn burn_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Check test preconditions.
 		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
@@ -92,7 +95,7 @@ fn currency_burn_works() {
 }
 
 #[test]
-fn currency_issue_works() {
+fn issue_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Check test preconditions.
 		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
@@ -108,7 +111,7 @@ fn currency_issue_works() {
 }
 
 #[test]
-fn currency_transfer_works() {
+fn transfer_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Check test preconditions.
 		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
@@ -144,7 +147,7 @@ fn currency_transfer_works() {
 }
 
 #[test]
-fn currency_slash_works() {
+fn slash_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Check test preconditions.
 		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
@@ -155,7 +158,7 @@ fn currency_slash_works() {
 		System::set_block_number(1);
 
 		// Invoke the function under test.
-		assert!(EvmBalances::slash(&alice(), 1000).1.is_zero());
+		assert!(EvmBalances::slash(&alice(), slashed_amount).1.is_zero());
 
 		// Assert state changes.
 		assert_eq!(
@@ -170,7 +173,7 @@ fn currency_slash_works() {
 }
 
 #[test]
-fn currency_deposit_into_existing_works() {
+fn deposit_into_existing_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Check test preconditions.
 		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
@@ -199,7 +202,7 @@ fn currency_deposit_into_existing_works() {
 }
 
 #[test]
-fn currency_deposit_creating_works() {
+fn deposit_creating_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test preconditions.
 		let charlie = H160::from_str("1000000000000000000000000000000000000003").unwrap();
@@ -226,7 +229,7 @@ fn currency_deposit_creating_works() {
 }
 
 #[test]
-fn currency_withdraw_works() {
+fn withdraw_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Check test preconditions.
 		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
@@ -257,7 +260,7 @@ fn currency_withdraw_works() {
 }
 
 #[test]
-fn currency_make_free_balance_be_works() {
+fn make_free_balance_be_works() {
 	new_test_ext().execute_with(|| {
 		// Prepare test preconditions.
 		let charlie = H160::from_str("1000000000000000000000000000000000000003").unwrap();
@@ -301,7 +304,7 @@ fn evm_system_account_should_be_reaped() {
 }
 
 #[test]
-fn evm_balances_transferring_too_high_value_should_not_panic() {
+fn transferring_too_high_value_should_not_panic() {
 	new_test_ext().execute_with(|| {
 		// Prepare test preconditions.
 		let charlie = H160::from_str("1000000000000000000000000000000000000003").unwrap();
@@ -314,203 +317,5 @@ fn evm_balances_transferring_too_high_value_should_not_panic() {
 			EvmBalances::transfer(&charlie, &eve, u64::MAX, ExistenceRequirement::AllowDeath),
 			ArithmeticError::Overflow,
 		);
-	});
-}
-
-#[test]
-fn evm_fee_deduction() {
-	new_test_ext().execute_with(|| {
-		let charlie = H160::from_str("1000000000000000000000000000000000000003").unwrap();
-
-		// Seed account
-		let _ = <Test as pallet_evm::Config>::Currency::deposit_creating(&charlie, 100);
-		assert_eq!(EvmBalances::free_balance(&charlie), 100);
-
-		// Deduct fees as 10 units
-		let imbalance =
-			<<Test as pallet_evm::Config>::OnChargeTransaction as pallet_evm::OnChargeEVMTransaction<Test>>::withdraw_fee(
-				&charlie,
-				U256::from(10),
-			)
-			.unwrap();
-		assert_eq!(EvmBalances::free_balance(&charlie), 90);
-
-		// Refund fees as 5 units
-		<<Test as pallet_evm::Config>::OnChargeTransaction as pallet_evm::OnChargeEVMTransaction<Test>>::correct_and_deposit_fee(&charlie, U256::from(5), U256::from(5), imbalance);
-		assert_eq!(EvmBalances::free_balance(&charlie), 95);
-	});
-}
-
-#[test]
-fn evm_issuance_after_tip() {
-	new_test_ext().execute_with(|| {
-		let before_tip = <Test as pallet_evm::Config>::Currency::total_issuance();
-
-		let gas_limit: u64 = 1_000_000;
- 		let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-
-		assert_ok!(<Test as pallet_evm::Config>::Runner::call(
-			alice(),
-			bob(),
-			Vec::new(),
-			U256::from(1),
-			gas_limit,
-			Some(U256::from(2_000_000_000)),
-			None,
-			None,
-			Vec::new(),
-			true,
-			true,
-			Some(weight_limit),
-			Some(0),
-			<Test as pallet_evm::Config>::config(),
-		));
-
-		// Only base fee is burned
-		let base_fee: u64 = <Test as pallet_evm::Config>::FeeCalculator::min_gas_price()
-			.0
-			.unique_saturated_into();
-
-		let after_tip = <Test as pallet_evm::Config>::Currency::total_issuance();
-
-		assert_eq!(after_tip, (before_tip - (base_fee * 21_000)));
-	});
-}
-
-#[test]
-fn evm_refunds_should_work() {
-	new_test_ext().execute_with(|| {
-		let before_call = EVM::account_basic(&alice()).0.balance;
-		// Gas price is not part of the actual fee calculations anymore, only the base fee.
-		//
-		// Because we first deduct max_fee_per_gas * gas_limit (2_000_000_000 * 1000000) we need
-		// to ensure that the difference (max fee VS base fee) is refunded.
-
-		let gas_limit: u64 = 1_000_000;
- 		let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-
-		let _ = <Test as pallet_evm::Config>::Runner::call(
-			alice(),
-			bob(),
-			Vec::new(),
-			U256::from(1),
-			gas_limit,
-			Some(U256::from(2_000_000_000)),
-			None,
-			None,
-			Vec::new(),
-			true,
-			true,
-			Some(weight_limit),
- 			Some(0),
-			<Test as pallet_evm::Config>::config(),
-		);
-
-		let (base_fee, _) = <Test as pallet_evm::Config>::FeeCalculator::min_gas_price();
-		let total_cost = (U256::from(21_000) * base_fee) + U256::from(1);
-		let after_call = EVM::account_basic(&alice()).0.balance;
-		assert_eq!(after_call, before_call - total_cost);
-	});
-}
-
-#[test]
-fn evm_refunds_and_priority_should_work() {
-	new_test_ext().execute_with(|| {
-		let before_call = EVM::account_basic(&alice()).0.balance;
-		// We deliberately set a base fee + max tip > max fee.
-		// The effective priority tip will be 1GWEI instead 1.5GWEI:
-		// 		(max_fee_per_gas - base_fee).min(max_priority_fee)
-		//		(2 - 1).min(1.5)
-		let tip = U256::from(1_500_000_000);
-		let max_fee_per_gas = U256::from(2_000_000_000);
-		let used_gas = U256::from(21_000);
-
-		let gas_limit: u64 = 1_000_000;
- 		let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-
-		let _ = <Test as pallet_evm::Config>::Runner::call(
-			alice(),
-			bob(),
-			Vec::new(),
-			U256::from(1),
-			gas_limit,
-			Some(max_fee_per_gas),
-			Some(tip),
-			None,
-			Vec::new(),
-			true,
-			true,
-			Some(weight_limit),
- 			Some(0),
-			<Test as pallet_evm::Config>::config(),
-		);
-
-		let (base_fee, _) = <Test as pallet_evm::Config>::FeeCalculator::min_gas_price();
-		let actual_tip = (max_fee_per_gas - base_fee).min(tip) * used_gas;
-		let total_cost = (used_gas * base_fee) + U256::from(actual_tip) + U256::from(1);
-		let after_call = EVM::account_basic(&alice()).0.balance;
-		// The tip is deducted but never refunded to the caller.
-		assert_eq!(after_call, before_call - total_cost);
-	});
-}
-
-#[test]
-fn evm_call_should_fail_with_priority_greater_than_max_fee() {
-	new_test_ext().execute_with(|| {
-		// Max priority greater than max fee should fail.
-		let tip: u128 = 1_100_000_000;
-
-		let gas_limit: u64 = 1_000_000;
- 		let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-
-		let result = <Test as pallet_evm::Config>::Runner::call(
-			alice(),
-			bob(),
-			Vec::new(),
-			U256::from(1),
-			gas_limit,
-			Some(U256::from(1_000_000_000)),
-			Some(U256::from(tip)),
-			None,
-			Vec::new(),
-			true,
-			true,
-			Some(weight_limit),
- 			Some(0),
-			<Test as pallet_evm::Config>::config(),
-		);
-		assert!(result.is_err());
-		// Some used weight is returned as part of the error.
-		assert_eq!(result.unwrap_err().weight, Weight::from_parts(7, 0));
-	});
-}
-
-#[test]
-fn evm_call_should_succeed_with_priority_equal_to_max_fee() {
-	new_test_ext().execute_with(|| {
-		let tip: u128 = 1_000_000_000;
-
-		let gas_limit: u64 = 1_000_000;
- 		let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-
-		// Mimics the input for pre-eip-1559 transaction types where `gas_price`
-		// is used for both `max_fee_per_gas` and `max_priority_fee_per_gas`.
-		let result = <Test as pallet_evm::Config>::Runner::call(
-			alice(),
-			bob(),
-			Vec::new(),
-			U256::from(1),
-			gas_limit,
-			Some(U256::from(1_000_000_000)),
-			Some(U256::from(tip)),
-			None,
-			Vec::new(),
-			true,
-			true,
-			Some(weight_limit),
- 			Some(0),
-			<Test as pallet_evm::Config>::config(),
-		);
-		assert!(result.is_ok());
 	});
 }
