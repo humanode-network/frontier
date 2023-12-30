@@ -262,6 +262,32 @@ fn slash_works() {
 }
 
 #[test]
+fn slash_works_full_balance() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let slashed_amount = INIT_BALANCE;
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		// Invoke the function under test.
+		assert!(EvmBalances::slash(&alice(), slashed_amount).1.is_zero());
+
+		// Assert state changes.
+		assert_eq!(
+			EvmBalances::total_balance(&alice()),
+			INIT_BALANCE - slashed_amount
+		);
+		System::assert_has_event(RuntimeEvent::EvmBalances(crate::Event::Slashed {
+			who: alice(),
+			amount: slashed_amount,
+		}));
+	});
+}
+
+#[test]
 fn deposit_into_existing_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Check test preconditions.
