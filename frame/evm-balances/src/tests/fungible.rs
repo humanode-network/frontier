@@ -69,3 +69,23 @@ fn reducable_balance_works() {
 		);
 	});
 }
+
+#[test]
+fn can_deposit_works_success() {
+	new_test_ext().execute_with_ext(|_| {
+		assert_eq!(
+			EvmBalances::can_deposit(&alice(), 10, Provenance::Minted),
+			DepositConsequence::Success
+		);
+	});
+}
+
+#[test]
+fn can_deposit_works_overflow() {
+	new_test_ext().execute_with_ext(|_| {
+		assert_eq!(
+			EvmBalances::can_deposit(&alice(), u64::MAX, Provenance::Minted),
+			DepositConsequence::Overflow
+		);
+	});
+}
