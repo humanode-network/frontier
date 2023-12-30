@@ -2,6 +2,7 @@
 
 use frame_support::{assert_noop, assert_ok, traits::Currency};
 use sp_core::H160;
+use sp_runtime::TokenError;
 use sp_std::str::FromStr;
 
 use crate::{mock::*, *};
@@ -143,6 +144,30 @@ fn transfer_works() {
 			to: bob(),
 			amount: transfered_amount,
 		}));
+	});
+}
+
+#[test]
+fn transfer_fails_funds_unavailable() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let transfered_amount = INIT_BALANCE + 1;
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		// Invoke the function under test.
+		assert_noop!(
+			EvmBalances::transfer(
+				&alice(),
+				&bob(),
+				transfered_amount,
+				ExistenceRequirement::KeepAlive
+			),
+			TokenError::FundsUnavailable
+		);
 	});
 }
 
