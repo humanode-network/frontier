@@ -89,3 +89,43 @@ fn can_deposit_works_overflow() {
 		);
 	});
 }
+
+#[test]
+fn can_withdraw_works_success() {
+	new_test_ext().execute_with_ext(|_| {
+		assert_eq!(
+			EvmBalances::can_withdraw(&alice(), 10),
+			WithdrawConsequence::Success
+		);
+	});
+}
+
+#[test]
+fn can_withdraw_works_underflow() {
+	new_test_ext().execute_with_ext(|_| {
+		assert_eq!(
+			EvmBalances::can_withdraw(&alice(), u64::MAX),
+			WithdrawConsequence::Underflow
+		);
+	});
+}
+
+#[test]
+fn can_withdraw_works_balance_low() {
+	new_test_ext().execute_with_ext(|_| {
+		assert_eq!(
+			EvmBalances::can_withdraw(&alice(), INIT_BALANCE + 1),
+			WithdrawConsequence::BalanceLow
+		);
+	});
+}
+
+#[test]
+fn can_withdraw_works_reduced_to_zero() {
+	new_test_ext().execute_with_ext(|_| {
+		assert_eq!(
+			EvmBalances::can_withdraw(&alice(), INIT_BALANCE),
+			WithdrawConsequence::ReducedToZero(0)
+		);
+	});
+}
