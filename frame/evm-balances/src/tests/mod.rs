@@ -8,7 +8,8 @@ use sp_std::str::FromStr;
 
 use crate::{mock::*, *};
 
-mod currency_test;
+mod currency;
+mod fungible;
 
 #[test]
 fn basic_setup_works() {
