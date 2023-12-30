@@ -284,6 +284,10 @@ fn slash_works_full_balance() {
 			who: alice(),
 			amount: slashed_amount,
 		}));
+		assert!(!EvmSystem::account_exists(&alice()));
+		System::assert_has_event(RuntimeEvent::EvmSystem(
+			pallet_evm_system::Event::KilledAccount { account: alice() },
+		));
 	});
 }
 
@@ -391,7 +395,7 @@ fn withdraw_works() {
 		// Invoke the function under test.
 		assert_ok!(EvmBalances::withdraw(
 			&alice(),
-			1000,
+			withdrawed_amount,
 			WithdrawReasons::FEE,
 			ExistenceRequirement::KeepAlive
 		));
@@ -405,6 +409,41 @@ fn withdraw_works() {
 			who: alice(),
 			amount: withdrawed_amount,
 		}));
+	});
+}
+
+#[test]
+fn withdraw_works_full_balance() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let withdrawed_amount = INIT_BALANCE;
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		// Invoke the function under test.
+		assert_ok!(EvmBalances::withdraw(
+			&alice(),
+			withdrawed_amount,
+			WithdrawReasons::TRANSFER,
+			ExistenceRequirement::AllowDeath
+		));
+
+		// Assert state changes.
+		assert_eq!(
+			EvmBalances::total_balance(&alice()),
+			INIT_BALANCE - withdrawed_amount
+		);
+		System::assert_has_event(RuntimeEvent::EvmBalances(crate::Event::Withdraw {
+			who: alice(),
+			amount: withdrawed_amount,
+		}));
+		assert!(!EvmSystem::account_exists(&alice()));
+		System::assert_has_event(RuntimeEvent::EvmSystem(
+			pallet_evm_system::Event::KilledAccount { account: alice() },
+		));
 	});
 }
 
