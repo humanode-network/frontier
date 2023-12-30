@@ -317,6 +317,40 @@ fn deposit_into_existing_works() {
 }
 
 #[test]
+fn deposit_into_existing_fails_overflow() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let deposited_amount = u64::MAX;
+
+		// Invoke the function under test.
+		assert_noop!(
+			EvmBalances::deposit_into_existing(&alice(), deposited_amount),
+			ArithmeticError::Overflow
+		);
+	});
+}
+
+#[test]
+fn deposit_into_existing_fails_dead_account() {
+	new_test_ext().execute_with_ext(|_| {
+		let charlie = H160::from_str("1000000000000000000000000000000000000003").unwrap();
+
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&charlie), 0);
+
+		let deposited_amount = 10;
+
+		// Invoke the function under test.
+		assert_noop!(
+			EvmBalances::deposit_into_existing(&charlie, deposited_amount),
+			Error::<Test>::DeadAccount
+		);
+	});
+}
+
+#[test]
 fn deposit_creating_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test preconditions.
