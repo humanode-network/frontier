@@ -133,8 +133,7 @@ where
 			who,
 			|account, _is_new| -> Result<(Self::NegativeImbalance, Self::Balance), DispatchError> {
 				// Best value is the most amount we can slash following liveness rules.
-				let ed = T::ExistentialDeposit::get();
-				let actual = value.min(account.free.saturating_sub(ed));
+				let actual = value.min(account.free);
 				account.free.saturating_reduce(actual);
 				let remaining = value.saturating_sub(actual);
 				Ok((NegativeImbalance::new(actual), remaining))
