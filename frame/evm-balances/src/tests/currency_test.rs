@@ -148,6 +148,46 @@ fn transfer_works() {
 }
 
 #[test]
+fn transfer_works_full_balance() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let transfered_amount = INIT_BALANCE;
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		// Invoke the function under test.
+		assert_ok!(EvmBalances::transfer(
+			&alice(),
+			&bob(),
+			transfered_amount,
+			ExistenceRequirement::AllowDeath
+		));
+
+		// Assert state changes.
+		assert_eq!(
+			EvmBalances::total_balance(&alice()),
+			INIT_BALANCE - transfered_amount
+		);
+		assert_eq!(
+			EvmBalances::total_balance(&bob()),
+			INIT_BALANCE + transfered_amount
+		);
+		System::assert_has_event(RuntimeEvent::EvmBalances(crate::Event::Transfer {
+			from: alice(),
+			to: bob(),
+			amount: transfered_amount,
+		}));
+		assert!(!EvmSystem::account_exists(&alice()));
+		System::assert_has_event(RuntimeEvent::EvmSystem(
+			pallet_evm_system::Event::KilledAccount { account: alice() },
+		));
+	});
+}
+
+#[test]
 fn transfer_fails_funds_unavailable() {
 	new_test_ext().execute_with_ext(|_| {
 		// Check test preconditions.
@@ -167,6 +207,30 @@ fn transfer_fails_funds_unavailable() {
 				ExistenceRequirement::KeepAlive
 			),
 			TokenError::FundsUnavailable
+		);
+	});
+}
+
+#[test]
+fn transfer_fails_not_expendable() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let transfered_amount = INIT_BALANCE;
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		// Invoke the function under test.
+		assert_noop!(
+			EvmBalances::transfer(
+				&alice(),
+				&bob(),
+				transfered_amount,
+				ExistenceRequirement::KeepAlive
+			),
+			TokenError::NotExpendable
 		);
 	});
 }
