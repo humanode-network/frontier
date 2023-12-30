@@ -448,6 +448,48 @@ fn withdraw_works_full_balance() {
 }
 
 #[test]
+fn withdraw_fails_insufficient_balance() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let withdrawed_amount = INIT_BALANCE + 1;
+
+		// Invoke the function under test.
+		assert_noop!(
+			EvmBalances::withdraw(
+				&alice(),
+				withdrawed_amount,
+				WithdrawReasons::TRANSFER,
+				ExistenceRequirement::AllowDeath
+			),
+			Error::<Test>::InsufficientBalance
+		);
+	});
+}
+
+#[test]
+fn withdraw_fails_expendability() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let withdrawed_amount = INIT_BALANCE;
+
+		// Invoke the function under test.
+		assert_noop!(
+			EvmBalances::withdraw(
+				&alice(),
+				withdrawed_amount,
+				WithdrawReasons::TRANSFER,
+				ExistenceRequirement::KeepAlive
+			),
+			Error::<Test>::Expendability
+		);
+	});
+}
+
+#[test]
 fn make_free_balance_be_works() {
 	new_test_ext().execute_with(|| {
 		// Prepare test preconditions.
