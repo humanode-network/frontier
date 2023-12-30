@@ -364,10 +364,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			return WithdrawConsequence::ReducedToZero(new_total_balance);
 		}
 
-		// Enough free funds to have them be reduced.
-		match account.free.checked_sub(&amount) {
-			Some(_) => WithdrawConsequence::Success,
-			None => WithdrawConsequence::BalanceLow,
-		}
+		WithdrawConsequence::Success
 	}
 }
