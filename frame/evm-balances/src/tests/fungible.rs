@@ -3,7 +3,7 @@
 use frame_support::{
 	assert_noop, assert_ok,
 	traits::{
-		fungible::{Inspect, Mutate, Unbalanced},
+		fungible::{Balanced, Inspect, Mutate, Unbalanced},
 		tokens::Precision,
 	},
 };
@@ -778,5 +778,197 @@ fn transfer_fails_underflow() {
 			// Withdraw consequence is checked first by reducing total issuance.
 			ArithmeticError::Underflow,
 		);
+	});
+}
+
+#[test]
+fn rescind_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		let rescinded_balance = 100;
+
+		// Burn some balance.
+		let imbalance = EvmBalances::rescind(rescinded_balance);
+
+		// Assert state changes.
+		assert_eq!(
+			EvmBalances::total_issuance(),
+			2 * INIT_BALANCE - rescinded_balance
+		);
+		drop(imbalance);
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+		System::assert_has_event(RuntimeEvent::EvmBalances(Event::Rescinded {
+			amount: rescinded_balance,
+		}));
+	});
+}
+
+#[test]
+fn issue_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		let issued_balance = 100;
+
+		// Burn some balance.
+		let imbalance = EvmBalances::issue(issued_balance);
+
+		// Assert state changes.
+		assert_eq!(
+			EvmBalances::total_issuance(),
+			2 * INIT_BALANCE + issued_balance
+		);
+		drop(imbalance);
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+		System::assert_has_event(RuntimeEvent::EvmBalances(Event::Issued {
+			amount: issued_balance,
+		}));
+	});
+}
+
+#[test]
+fn deposit_flow_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let deposited_amount = 10;
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		// Invoke the function under test.
+		let debt = EvmBalances::deposit(&alice(), deposited_amount, Precision::Exact).unwrap();
+
+		// Assert state changes.
+		assert_eq!(
+			EvmBalances::total_balance(&alice()),
+			INIT_BALANCE + deposited_amount
+		);
+		System::assert_has_event(RuntimeEvent::EvmBalances(Event::Deposit {
+			who: alice(),
+			amount: deposited_amount,
+		}));
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+
+		let _ = EvmBalances::settle(&bob(), debt, Preservation::Expendable);
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+	});
+}
+
+#[test]
+fn deposit_works_new_account() {
+	new_test_ext().execute_with_ext(|_| {
+		let charlie = H160::from_str("1000000000000000000000000000000000000003").unwrap();
+
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&charlie), 0);
+
+		let deposited_amount = 10;
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		// Invoke the function under test.
+		let debt = EvmBalances::deposit(&charlie, deposited_amount, Precision::Exact).unwrap();
+
+		// Assert state changes.
+		assert_eq!(EvmBalances::total_balance(&charlie), deposited_amount);
+		System::assert_has_event(RuntimeEvent::EvmBalances(Event::Deposit {
+			who: charlie,
+			amount: deposited_amount,
+		}));
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+		let _ = EvmBalances::settle(&bob(), debt, Preservation::Expendable);
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+		assert!(EvmSystem::account_exists(&charlie));
+		System::assert_has_event(RuntimeEvent::EvmSystem(
+			pallet_evm_system::Event::NewAccount { account: charlie },
+		));
+	});
+}
+
+#[test]
+fn withdraw_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let withdrawed_amount = 1000;
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		// Invoke the function under test.
+		let credit = EvmBalances::withdraw(
+			&alice(),
+			withdrawed_amount,
+			Precision::Exact,
+			Preservation::Preserve,
+			Fortitude::Polite,
+		)
+		.unwrap();
+
+		// Assert state changes.
+		assert_eq!(
+			EvmBalances::total_balance(&alice()),
+			INIT_BALANCE - withdrawed_amount
+		);
+		System::assert_has_event(RuntimeEvent::EvmBalances(Event::Withdraw {
+			who: alice(),
+			amount: withdrawed_amount,
+		}));
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+		let _ = EvmBalances::resolve(&bob(), credit);
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+	});
+}
+
+#[test]
+fn withdraw_works_full_balance() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let withdrawed_amount = INIT_BALANCE;
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		// Invoke the function under test.
+		let credit = EvmBalances::withdraw(
+			&alice(),
+			withdrawed_amount,
+			Precision::Exact,
+			Preservation::Expendable,
+			Fortitude::Polite,
+		)
+		.unwrap();
+
+		// Assert state changes.
+		assert_eq!(
+			EvmBalances::total_balance(&alice()),
+			INIT_BALANCE - withdrawed_amount
+		);
+		System::assert_has_event(RuntimeEvent::EvmBalances(crate::Event::Withdraw {
+			who: alice(),
+			amount: withdrawed_amount,
+		}));
+		assert!(!EvmSystem::account_exists(&alice()));
+		System::assert_has_event(RuntimeEvent::EvmSystem(
+			pallet_evm_system::Event::KilledAccount { account: alice() },
+		));
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+		let _ = EvmBalances::resolve(&bob(), credit);
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
 	});
 }
