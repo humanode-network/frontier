@@ -499,7 +499,7 @@ fn burn_from_works_exact_full_balance() {
 }
 
 #[test]
-fn burn_from_works_fails_funds_unavailable() {
+fn burn_from_fails_funds_unavailable() {
 	new_test_ext().execute_with_ext(|_| {
 		// Check test preconditions.
 		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
@@ -518,6 +518,86 @@ fn burn_from_works_fails_funds_unavailable() {
 				Precision::Exact,
 				Fortitude::Polite
 			),
+			TokenError::FundsUnavailable
+		);
+	});
+}
+
+#[test]
+fn shelve_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		let shelved_balance = 10;
+
+		// Invoke the function under test.
+		assert_ok!(EvmBalances::shelve(&alice(), shelved_balance));
+
+		// Assert state changes.
+		assert_eq!(
+			EvmBalances::total_balance(&alice()),
+			INIT_BALANCE - shelved_balance
+		);
+		assert_eq!(
+			EvmBalances::total_issuance(),
+			2 * INIT_BALANCE - shelved_balance
+		);
+		System::assert_has_event(RuntimeEvent::EvmBalances(Event::Suspended {
+			who: alice(),
+			amount: shelved_balance,
+		}));
+	});
+}
+
+#[test]
+fn shelve_works_exact_full_balance() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		let shelved_balance = INIT_BALANCE;
+
+		// Invoke the function under test.
+		assert_ok!(EvmBalances::shelve(&alice(), shelved_balance));
+
+		// Assert state changes.
+		assert_eq!(EvmBalances::total_balance(&alice()), 0);
+		assert_eq!(EvmBalances::total_issuance(), INIT_BALANCE);
+		System::assert_has_event(RuntimeEvent::EvmBalances(Event::Suspended {
+			who: alice(),
+			amount: INIT_BALANCE,
+		}));
+		assert!(!EvmSystem::account_exists(&alice()));
+		System::assert_has_event(RuntimeEvent::EvmSystem(
+			pallet_evm_system::Event::KilledAccount { account: alice() },
+		));
+	});
+}
+
+#[test]
+fn shelve_fails_funds_unavailable() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		let shelved_balance = INIT_BALANCE + 1;
+
+		// Invoke the function under test.
+		assert_noop!(
+			EvmBalances::shelve(&alice(), shelved_balance),
 			TokenError::FundsUnavailable
 		);
 	});
