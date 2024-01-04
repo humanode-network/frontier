@@ -1,6 +1,9 @@
 //! Tests regarding the functionality of the fungible trait set implementations.
 
-use frame_support::{assert_noop, assert_ok, traits::fungible::Inspect};
+use frame_support::{
+	assert_noop, assert_ok,
+	traits::fungible::{Inspect, Unbalanced},
+};
 use sp_core::H160;
 use sp_runtime::TokenError;
 use sp_std::str::FromStr;
@@ -127,5 +130,24 @@ fn can_withdraw_works_reduced_to_zero() {
 			EvmBalances::can_withdraw(&alice(), INIT_BALANCE),
 			WithdrawConsequence::ReducedToZero(0)
 		);
+	});
+}
+
+#[test]
+fn write_balance_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let write_balance = 10;
+
+		// Invoke the function under test.
+		assert_eq!(
+			EvmBalances::write_balance(&alice(), write_balance),
+			Ok(None)
+		);
+
+		// Assert state changes.
+		assert_eq!(EvmBalances::total_balance(&alice()), write_balance);
 	});
 }

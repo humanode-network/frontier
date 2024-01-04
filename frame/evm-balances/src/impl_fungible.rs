@@ -65,6 +65,7 @@ impl<T: Config<I>, I: 'static> fungible::Unbalanced<<T as Config<I>>::AccountId>
 	fn handle_dust(dust: fungible::Dust<<T as Config<I>>::AccountId, Self>) {
 		T::DustRemoval::on_unbalanced(NegativeImbalance::new(dust.0));
 	}
+
 	fn write_balance(
 		who: &<T as Config<I>>::AccountId,
 		amount: Self::Balance,
