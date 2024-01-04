@@ -268,3 +268,62 @@ fn decrease_balance_fails_funds_unavailable() {
 		);
 	});
 }
+
+#[test]
+fn increase_balance_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let increased_balance = 100;
+
+		// Invoke the function under test.
+		assert_ok!(EvmBalances::increase_balance(
+			&alice(),
+			increased_balance,
+			Precision::Exact,
+		));
+
+		// Assert state changes.
+		assert_eq!(
+			EvmBalances::total_balance(&alice()),
+			INIT_BALANCE + increased_balance
+		);
+	});
+}
+
+#[test]
+fn increase_balance_works_best_effort() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let increased_balance = u64::MAX;
+
+		// Invoke the function under test.
+		assert_ok!(EvmBalances::increase_balance(
+			&alice(),
+			increased_balance,
+			Precision::BestEffort,
+		));
+
+		// Assert state changes.
+		assert_eq!(EvmBalances::total_balance(&alice()), u64::MAX);
+	});
+}
+
+#[test]
+fn increase_balance_fails_overflow() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let increased_balance = u64::MAX;
+
+		// Invoke the function under test.
+		assert_noop!(
+			EvmBalances::increase_balance(&alice(), increased_balance, Precision::Exact),
+			ArithmeticError::Overflow
+		);
+	});
+}
