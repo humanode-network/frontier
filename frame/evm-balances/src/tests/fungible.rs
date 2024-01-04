@@ -3,8 +3,9 @@
 use frame_support::{
 	assert_noop, assert_ok,
 	traits::{
-		fungible::{Inspect, Unbalanced},
+		fungible::{Inspect, Mutate, Unbalanced},
 		tokens::Precision,
+		RankedMembers,
 	},
 };
 use sp_core::H160;
@@ -343,5 +344,52 @@ fn deactivate_reactivate_works() {
 		EvmBalances::reactivate(40);
 		// Assert state changes.
 		assert_eq!(<InactiveIssuance<Test>>::get(), 60);
+	});
+}
+
+#[test]
+fn mint_into_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		let minted_balance = 10;
+
+		// Invoke the function under test.
+		assert_ok!(EvmBalances::mint_into(&alice(), minted_balance));
+
+		// Assert state changes.
+		assert_eq!(
+			EvmBalances::total_balance(&alice()),
+			INIT_BALANCE + minted_balance
+		);
+		assert_eq!(
+			EvmBalances::total_issuance(),
+			2 * INIT_BALANCE + minted_balance
+		);
+		System::assert_has_event(RuntimeEvent::EvmBalances(Event::Minted {
+			who: alice(),
+			amount: minted_balance,
+		}));
+	});
+}
+
+#[test]
+fn mint_into_fails_overflow() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let minted_balance = u64::MAX;
+
+		// Invoke the function under test.
+		assert_noop!(
+			EvmBalances::mint_into(&alice(), minted_balance),
+			ArithmeticError::Overflow
+		);
 	});
 }
