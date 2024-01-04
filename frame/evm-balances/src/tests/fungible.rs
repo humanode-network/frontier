@@ -5,7 +5,6 @@ use frame_support::{
 	traits::{
 		fungible::{Inspect, Mutate, Unbalanced},
 		tokens::Precision,
-		RankedMembers,
 	},
 };
 use sp_core::H160;
@@ -646,6 +645,138 @@ fn restore_fails_overflow() {
 		assert_noop!(
 			EvmBalances::restore(&alice(), restored_balance),
 			ArithmeticError::Overflow
+		);
+	});
+}
+
+#[test]
+fn transfer_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let transfered_amount = 100;
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		// Invoke the function under test.
+		assert_ok!(EvmBalances::transfer(
+			&alice(),
+			&bob(),
+			transfered_amount,
+			Preservation::Preserve
+		));
+
+		// Assert state changes.
+		assert_eq!(
+			EvmBalances::total_balance(&alice()),
+			INIT_BALANCE - transfered_amount
+		);
+		assert_eq!(
+			EvmBalances::total_balance(&bob()),
+			INIT_BALANCE + transfered_amount
+		);
+		System::assert_has_event(RuntimeEvent::EvmBalances(Event::Transfer {
+			from: alice(),
+			to: bob(),
+			amount: transfered_amount,
+		}));
+	});
+}
+
+#[test]
+fn transfer_works_full_balance() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let transfered_amount = INIT_BALANCE;
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		// Invoke the function under test.
+		assert_ok!(EvmBalances::transfer(
+			&alice(),
+			&bob(),
+			transfered_amount,
+			Preservation::Expendable
+		));
+
+		// Assert state changes.
+		assert_eq!(
+			EvmBalances::total_balance(&alice()),
+			INIT_BALANCE - transfered_amount
+		);
+		assert_eq!(
+			EvmBalances::total_balance(&bob()),
+			INIT_BALANCE + transfered_amount
+		);
+		System::assert_has_event(RuntimeEvent::EvmBalances(Event::Transfer {
+			from: alice(),
+			to: bob(),
+			amount: transfered_amount,
+		}));
+		assert!(!EvmSystem::account_exists(&alice()));
+		System::assert_has_event(RuntimeEvent::EvmSystem(
+			pallet_evm_system::Event::KilledAccount { account: alice() },
+		));
+	});
+}
+
+#[test]
+fn transfer_fails_funds_unavailable() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let transfered_amount = INIT_BALANCE + 1;
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		// Invoke the function under test.
+		assert_noop!(
+			EvmBalances::transfer(&alice(), &bob(), transfered_amount, Preservation::Preserve),
+			TokenError::FundsUnavailable
+		);
+	});
+}
+
+#[test]
+fn transfer_fails_not_expendable() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let transfered_amount = INIT_BALANCE;
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		// Invoke the function under test.
+		assert_noop!(
+			EvmBalances::transfer(&alice(), &bob(), transfered_amount, Preservation::Preserve),
+			TokenError::NotExpendable
+		);
+	});
+}
+
+#[test]
+fn transfer_fails_underflow() {
+	new_test_ext().execute_with(|| {
+		// Prepare test preconditions.
+		let charlie = H160::from_str("1000000000000000000000000000000000000003").unwrap();
+		let eve = H160::from_str("1000000000000000000000000000000000000004").unwrap();
+		EvmBalances::set_balance(&charlie, u64::MAX);
+		EvmBalances::set_balance(&eve, 1);
+
+		// Invoke the function under test.
+		assert_noop!(
+			EvmBalances::transfer(&charlie, &eve, u64::MAX, Preservation::Expendable),
+			// Withdraw consequence is checked first by reducing total issuance.
+			ArithmeticError::Underflow,
 		);
 	});
 }
