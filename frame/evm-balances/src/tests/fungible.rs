@@ -327,3 +327,21 @@ fn increase_balance_fails_overflow() {
 		);
 	});
 }
+
+#[test]
+fn deactivate_reactivate_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(<InactiveIssuance<Test>>::get(), 0);
+
+		// Deactivate some balance.
+		EvmBalances::deactivate(100);
+		// Assert state changes.
+		assert_eq!(<InactiveIssuance<Test>>::get(), 100);
+
+		// Reactivate some balance.
+		EvmBalances::reactivate(40);
+		// Assert state changes.
+		assert_eq!(<InactiveIssuance<Test>>::get(), 60);
+	});
+}
