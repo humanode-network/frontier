@@ -151,3 +151,19 @@ fn write_balance_works() {
 		assert_eq!(EvmBalances::total_balance(&alice()), write_balance);
 	});
 }
+
+#[test]
+fn set_total_issuance_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+
+		let set_total_issuance_balance = 100;
+
+		// Invoke the function under test.
+		EvmBalances::set_total_issuance(set_total_issuance_balance);
+
+		// Assert state changes.
+		assert_eq!(EvmBalances::total_issuance(), set_total_issuance_balance);
+	});
+}
