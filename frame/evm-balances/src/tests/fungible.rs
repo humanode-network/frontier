@@ -602,3 +602,50 @@ fn shelve_fails_funds_unavailable() {
 		);
 	});
 }
+
+#[test]
+fn restore_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		let restored_balance = 10;
+
+		// Invoke the function under test.
+		assert_ok!(EvmBalances::restore(&alice(), restored_balance));
+
+		// Assert state changes.
+		assert_eq!(
+			EvmBalances::total_balance(&alice()),
+			INIT_BALANCE + restored_balance
+		);
+		assert_eq!(
+			EvmBalances::total_issuance(),
+			2 * INIT_BALANCE + restored_balance
+		);
+		System::assert_has_event(RuntimeEvent::EvmBalances(Event::Restored {
+			who: alice(),
+			amount: restored_balance,
+		}));
+	});
+}
+
+#[test]
+fn restore_fails_overflow() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let restored_balance = u64::MAX;
+
+		// Invoke the function under test.
+		assert_noop!(
+			EvmBalances::restore(&alice(), restored_balance),
+			ArithmeticError::Overflow
+		);
+	});
+}
