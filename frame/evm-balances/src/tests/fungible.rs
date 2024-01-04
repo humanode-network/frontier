@@ -393,3 +393,132 @@ fn mint_into_fails_overflow() {
 		);
 	});
 }
+
+#[test]
+fn burn_from_works() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		let burned_balance = 10;
+
+		// Invoke the function under test.
+		assert_ok!(EvmBalances::burn_from(
+			&alice(),
+			burned_balance,
+			Precision::Exact,
+			Fortitude::Polite
+		));
+
+		// Assert state changes.
+		assert_eq!(
+			EvmBalances::total_balance(&alice()),
+			INIT_BALANCE - burned_balance
+		);
+		assert_eq!(
+			EvmBalances::total_issuance(),
+			2 * INIT_BALANCE - burned_balance
+		);
+		System::assert_has_event(RuntimeEvent::EvmBalances(Event::Burned {
+			who: alice(),
+			amount: burned_balance,
+		}));
+	});
+}
+
+#[test]
+fn burn_from_works_best_effort() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		let burned_balance = INIT_BALANCE + 1;
+
+		// Invoke the function under test.
+		assert_ok!(EvmBalances::burn_from(
+			&alice(),
+			burned_balance,
+			Precision::BestEffort,
+			Fortitude::Polite
+		));
+
+		// Assert state changes.
+		assert_eq!(EvmBalances::total_balance(&alice()), 0);
+		assert_eq!(EvmBalances::total_issuance(), INIT_BALANCE);
+		System::assert_has_event(RuntimeEvent::EvmBalances(Event::Burned {
+			who: alice(),
+			amount: INIT_BALANCE,
+		}));
+		assert!(!EvmSystem::account_exists(&alice()));
+		System::assert_has_event(RuntimeEvent::EvmSystem(
+			pallet_evm_system::Event::KilledAccount { account: alice() },
+		));
+	});
+}
+
+#[test]
+fn burn_from_works_exact_full_balance() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		let burned_balance = INIT_BALANCE;
+
+		// Invoke the function under test.
+		assert_ok!(EvmBalances::burn_from(
+			&alice(),
+			burned_balance,
+			Precision::Exact,
+			Fortitude::Polite
+		));
+
+		// Assert state changes.
+		assert_eq!(EvmBalances::total_balance(&alice()), 0);
+		assert_eq!(EvmBalances::total_issuance(), INIT_BALANCE);
+		System::assert_has_event(RuntimeEvent::EvmBalances(Event::Burned {
+			who: alice(),
+			amount: INIT_BALANCE,
+		}));
+		assert!(!EvmSystem::account_exists(&alice()));
+		System::assert_has_event(RuntimeEvent::EvmSystem(
+			pallet_evm_system::Event::KilledAccount { account: alice() },
+		));
+	});
+}
+
+#[test]
+fn burn_from_works_fails_funds_unavailable() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		let burned_balance = INIT_BALANCE + 1;
+
+		// Invoke the function under test.
+		assert_noop!(
+			EvmBalances::burn_from(
+				&alice(),
+				burned_balance,
+				Precision::Exact,
+				Fortitude::Polite
+			),
+			TokenError::FundsUnavailable
+		);
+	});
+}
