@@ -2,7 +2,10 @@
 
 use frame_support::{
 	assert_noop, assert_ok,
-	traits::fungible::{Inspect, Unbalanced},
+	traits::{
+		fungible::{Inspect, Unbalanced},
+		tokens::Precision,
+	},
 };
 use sp_core::H160;
 use sp_runtime::TokenError;
@@ -165,5 +168,103 @@ fn set_total_issuance_works() {
 
 		// Assert state changes.
 		assert_eq!(EvmBalances::total_issuance(), set_total_issuance_balance);
+	});
+}
+
+#[test]
+fn decrease_balance_works_exact_expendable() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let decreased_balance = 100;
+
+		// Invoke the function under test.
+		assert_ok!(EvmBalances::decrease_balance(
+			&alice(),
+			decreased_balance,
+			Precision::Exact,
+			Preservation::Expendable,
+			Fortitude::Polite
+		));
+
+		// Assert state changes.
+		assert_eq!(
+			EvmBalances::total_balance(&alice()),
+			INIT_BALANCE - decreased_balance
+		);
+	});
+}
+
+#[test]
+fn decrease_balance_works_best_effort_preserve() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let decreased_balance = INIT_BALANCE + 1;
+
+		// Invoke the function under test.
+		assert_ok!(EvmBalances::decrease_balance(
+			&alice(),
+			decreased_balance,
+			Precision::BestEffort,
+			Preservation::Preserve,
+			Fortitude::Polite
+		));
+
+		// Assert state changes.
+		assert_eq!(EvmBalances::total_balance(&alice()), 1);
+	});
+}
+
+#[test]
+fn decrease_balance_works_full_balance() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		// Set block number to enable events.
+		System::set_block_number(1);
+
+		let decreased_balance = INIT_BALANCE;
+
+		// Invoke the function under test.
+		assert_ok!(EvmBalances::decrease_balance(
+			&alice(),
+			decreased_balance,
+			Precision::Exact,
+			Preservation::Expendable,
+			Fortitude::Polite
+		));
+
+		// Assert state changes.
+		assert_eq!(EvmBalances::total_balance(&alice()), 0);
+		assert!(!EvmSystem::account_exists(&alice()));
+		System::assert_has_event(RuntimeEvent::EvmSystem(
+			pallet_evm_system::Event::KilledAccount { account: alice() },
+		));
+	});
+}
+
+#[test]
+fn decrease_balance_fails_funds_unavailable() {
+	new_test_ext().execute_with_ext(|_| {
+		// Check test preconditions.
+		assert_eq!(EvmBalances::total_balance(&alice()), INIT_BALANCE);
+
+		let decreased_balance = INIT_BALANCE + 1;
+
+		// Invoke the function under test.
+		assert_noop!(
+			EvmBalances::decrease_balance(
+				&alice(),
+				decreased_balance,
+				Precision::Exact,
+				Preservation::Preserve,
+				Fortitude::Polite
+			),
+			TokenError::FundsUnavailable
+		);
 	});
 }
