@@ -50,8 +50,8 @@ impl<T, DispatchValidator, DecodeLimit> Precompile for Dispatch<T, DispatchValid
 where
 	T: pallet_evm::Config,
 	T::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo + Decode,
-	<T::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<T::AccountId>>,
-	DispatchValidator: DispatchValidateT<T::AccountId, T::RuntimeCall>,
+	<T::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<<<T as pallet_evm::Config>::AccountProvider as pallet_evm::AccountProvider>::AccountId>>,
+	DispatchValidator: DispatchValidateT<<<T as pallet_evm::Config>::AccountProvider as pallet_evm::AccountProvider>::AccountId, T::RuntimeCall>,
 	DecodeLimit: Get<u32>,
 {
 	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
