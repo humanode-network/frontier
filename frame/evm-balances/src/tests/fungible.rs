@@ -765,7 +765,7 @@ fn transfer_fails_not_expendable() {
 
 #[test]
 fn transfer_fails_underflow() {
-	new_test_ext().execute_with(|| {
+	new_test_ext().execute_with_ext(|_| {
 		// Prepare test preconditions.
 		let charlie = H160::from_str("1000000000000000000000000000000000000003").unwrap();
 		let eve = H160::from_str("1000000000000000000000000000000000000004").unwrap();
