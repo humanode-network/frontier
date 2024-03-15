@@ -306,37 +306,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		})
 	}
 
-	fn deposit_consequence(
-		who: &<T as Config<I>>::AccountId,
-		amount: T::Balance,
-		provenance: Provenance,
-	) -> DepositConsequence {
-		if amount.is_zero() {
-			return DepositConsequence::Success;
-		}
-
-		if provenance == Provenance::Minted
-			&& TotalIssuance::<T, I>::get().checked_add(&amount).is_none()
-		{
-			return DepositConsequence::Overflow;
-		}
-
-		let account = Self::account(who);
-		let new_total_balance = match account.total().checked_add(&amount) {
-			Some(x) => x,
-			None => return DepositConsequence::Overflow,
-		};
-
-		if new_total_balance < T::ExistentialDeposit::get() {
-			return DepositConsequence::BelowMinimum;
-		}
-
-		// NOTE: We assume that we are a provider, so don't need to do any checks in the
-		// case of account creation.
-
-		DepositConsequence::Success
-	}
-
 	fn withdraw_consequence(
 		who: &<T as Config<I>>::AccountId,
 		amount: T::Balance,

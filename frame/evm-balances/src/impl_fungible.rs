@@ -43,7 +43,27 @@ impl<T: Config<I>, I: 'static> fungible::Inspect<<T as Config<I>>::AccountId> fo
 		amount: Self::Balance,
 		provenance: Provenance,
 	) -> DepositConsequence {
-		Self::deposit_consequence(who, amount, provenance)
+		if amount.is_zero() {
+			return DepositConsequence::Success;
+		}
+
+		if provenance == Provenance::Minted
+			&& TotalIssuance::<T, I>::get().checked_add(&amount).is_none()
+		{
+			return DepositConsequence::Overflow;
+		}
+
+		let account = Self::account(who);
+		match account.total().checked_add(&amount) {
+			None => return DepositConsequence::Overflow,
+			Some(x) if x < T::ExistentialDeposit::get() => return DepositConsequence::BelowMinimum,
+			Some(x) => x,
+		};
+
+		// NOTE: We assume that we are a provider, so don't need to do any checks in the
+		// case of account creation.
+
+		DepositConsequence::Success
 	}
 
 	fn can_withdraw(
