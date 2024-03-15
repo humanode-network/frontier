@@ -491,7 +491,7 @@ fn withdraw_fails_expendability() {
 
 #[test]
 fn make_free_balance_be_works() {
-	new_test_ext().execute_with(|| {
+	new_test_ext().execute_with_ext(|_| {
 		// Prepare test preconditions.
 		let charlie = H160::from_str("1000000000000000000000000000000000000003").unwrap();
 		let made_free_balance = 100;
@@ -535,7 +535,7 @@ fn evm_system_account_should_be_reaped() {
 
 #[test]
 fn transferring_too_high_value_should_not_panic() {
-	new_test_ext().execute_with(|| {
+	new_test_ext().execute_with_ext(|_| {
 		// Prepare test preconditions.
 		let charlie = H160::from_str("1000000000000000000000000000000000000003").unwrap();
 		let eve = H160::from_str("1000000000000000000000000000000000000004").unwrap();
