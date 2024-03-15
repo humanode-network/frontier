@@ -31,18 +31,11 @@ impl<T: Config<I>, I: 'static> fungible::Inspect<<T as Config<I>>::AccountId> fo
 		_force: Fortitude,
 	) -> Self::Balance {
 		let a = Self::account(who);
-		// Liquid balance is what is neither reserved nor locked/frozen.
-		let liquid = a.free;
-		match preservation {
-			Preservation::Expendable => liquid,
-			_ => {
-				// `must_remain_to_exist` is the part of liquid balance which must remain
-				// to keep total over ED.
-				let must_remain_to_exist =
-					T::ExistentialDeposit::get().saturating_sub(a.total() - liquid);
-				liquid.saturating_sub(must_remain_to_exist)
-			}
-		}
+		let untouchable = match preservation {
+			Preservation::Expendable => Zero::zero(),
+			_ => T::ExistentialDeposit::get(),
+		};
+		a.free.saturating_sub(untouchable)
 	}
 
 	fn can_deposit(
