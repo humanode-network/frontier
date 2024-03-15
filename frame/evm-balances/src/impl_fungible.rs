@@ -70,7 +70,30 @@ impl<T: Config<I>, I: 'static> fungible::Inspect<<T as Config<I>>::AccountId> fo
 		who: &<T as Config<I>>::AccountId,
 		amount: Self::Balance,
 	) -> WithdrawConsequence<Self::Balance> {
-		Self::withdraw_consequence(who, amount)
+		if amount.is_zero() {
+			return WithdrawConsequence::Success;
+		}
+
+		if TotalIssuance::<T, I>::get().checked_sub(&amount).is_none() {
+			return WithdrawConsequence::Underflow;
+		}
+
+		let account = Self::account(who);
+		let new_free_balance = match account.free.checked_sub(&amount) {
+			Some(x) => x,
+			None => return WithdrawConsequence::BalanceLow,
+		};
+
+		// Provider restriction - total account balance cannot be reduced to zero if it cannot
+		// sustain the loss of a provider reference.
+		// NOTE: This assumes that the pallet is a provider (which is true). Is this ever changes,
+		// then this will need to adapt accordingly.
+		let ed = T::ExistentialDeposit::get();
+		if new_free_balance < ed {
+			return WithdrawConsequence::ReducedToZero(new_free_balance);
+		}
+
+		WithdrawConsequence::Success
 	}
 }
 
