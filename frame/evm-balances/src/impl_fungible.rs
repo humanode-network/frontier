@@ -22,7 +22,7 @@ impl<T: Config<I>, I: 'static> fungible::Inspect<<T as Config<I>>::AccountId> fo
 	}
 
 	fn balance(who: &<T as Config<I>>::AccountId) -> Self::Balance {
-		Self::account(who).total()
+		Self::account(who).free
 	}
 
 	fn reducible_balance(
@@ -54,7 +54,7 @@ impl<T: Config<I>, I: 'static> fungible::Inspect<<T as Config<I>>::AccountId> fo
 		}
 
 		let account = Self::account(who);
-		match account.total().checked_add(&amount) {
+		match account.free.checked_add(&amount) {
 			None => return DepositConsequence::Overflow,
 			Some(x) if x < T::ExistentialDeposit::get() => return DepositConsequence::BelowMinimum,
 			Some(x) => x,
