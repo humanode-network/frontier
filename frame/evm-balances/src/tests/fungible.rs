@@ -56,21 +56,33 @@ fn balance_works() {
 #[test]
 fn reducable_balance_works() {
 	new_test_ext().execute_with_ext(|_| {
-		// Check the reducable balance value in `Expendable` case.
 		assert_eq!(
 			EvmBalances::reducible_balance(&alice(), Preservation::Expendable, Fortitude::Polite),
 			INIT_BALANCE
 		);
 
-		// Check the reducable balance value in `Preserve` case.
+		assert_eq!(
+			EvmBalances::reducible_balance(&alice(), Preservation::Expendable, Fortitude::Force),
+			INIT_BALANCE
+		);
+
 		assert_eq!(
 			EvmBalances::reducible_balance(&alice(), Preservation::Preserve, Fortitude::Polite),
 			INIT_BALANCE - 1
 		);
 
-		// Check the reducable balance value in `Protect` case.
+		assert_eq!(
+			EvmBalances::reducible_balance(&alice(), Preservation::Preserve, Fortitude::Force),
+			INIT_BALANCE - 1
+		);
+
 		assert_eq!(
 			EvmBalances::reducible_balance(&alice(), Preservation::Protect, Fortitude::Polite),
+			INIT_BALANCE - 1
+		);
+
+		assert_eq!(
+			EvmBalances::reducible_balance(&alice(), Preservation::Protect, Fortitude::Force),
 			INIT_BALANCE - 1
 		);
 	});
