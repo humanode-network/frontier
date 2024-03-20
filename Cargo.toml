@@ -59,6 +59,7 @@ log = { version = "0.4.17", default-features = false }
 mockall = "0.11"
 parity-db = "0.4.8"
 parking_lot = "0.12.1"
+paste = "1.0"
 rlp = { version = "0.5", default-features = false }
 scale-codec = { package = "parity-scale-codec", version = "3.2.1", default-features = false, features = ["derive"] }
 scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }

@@ -5479,6 +5479,7 @@ dependencies = [
  "pallet-evm-system",
  "pallet-timestamp",
  "parity-scale-codec",
+ "paste",
  "scale-info",
  "sp-core",
  "sp-io",
