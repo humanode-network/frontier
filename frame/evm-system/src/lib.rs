@@ -160,8 +160,13 @@ impl<T: Config> Pallet<T> {
 			return Err(Error::<T>::AccountNotExist.into());
 		}
 
+		if Account::<T>::get(who).data != <T as Config>::AccountData::default() {
+			return Err(Error::<T>::AccountDataNotEmpty.into());
+		}
+
 		Account::<T>::remove(who);
 		Self::on_killed_account(who.clone());
+
 		Ok(())
 	}
 }
@@ -175,10 +180,13 @@ impl<T: Config> StoredMap<<T as Config>::AccountId, <T as Config>::AccountData> 
 		k: &<T as Config>::AccountId,
 		f: impl FnOnce(&mut Option<<T as Config>::AccountData>) -> Result<R, E>,
 	) -> Result<R, E> {
-		let (mut maybe_account_data, was_providing) = if Self::account_exists(k) {
-			(Some(Account::<T>::get(k).data), true)
+		let account = Account::<T>::get(k);
+		let was_providing = account.data != <T as Config>::AccountData::default();
+
+		let mut maybe_account_data = if was_providing {
+			Some(account.data)
 		} else {
-			(None, false)
+			None
 		};
 
 		let result = f(&mut maybe_account_data)?;
