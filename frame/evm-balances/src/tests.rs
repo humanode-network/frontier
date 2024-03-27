@@ -8,6 +8,16 @@ use sp_std::str::FromStr;
 
 use crate::{mock::*, *};
 
+fn assert_total_issuance_invariant() {
+	let iterated_total_issuance: u64 = <pallet_evm_system::Account<Test>>::iter_values()
+		.map(|account_data| account_data.data.total())
+		.sum();
+
+	let total_issuance = EvmBalances::total_issuance();
+
+	assert_eq!(iterated_total_issuance, total_issuance);
+}
+
 #[test]
 fn basic_setup_works() {
 	new_test_ext().execute_with_ext(|_| {
@@ -23,6 +33,8 @@ fn basic_setup_works() {
 
 		// Check the total balance value.
 		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -72,6 +84,8 @@ fn currency_deactivate_reactivate_works() {
 		EvmBalances::reactivate(40);
 		// Assert state changes.
 		assert_eq!(<InactiveIssuance<Test>>::get(), 60);
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -88,6 +102,8 @@ fn currency_burn_works() {
 		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE - 100);
 		drop(imbalance);
 		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -104,6 +120,8 @@ fn currency_issue_works() {
 		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE + 100);
 		drop(imbalance);
 		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -140,6 +158,8 @@ fn currency_transfer_works() {
 			to: bob(),
 			amount: transfered_amount,
 		}));
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -166,6 +186,8 @@ fn currency_slash_works() {
 			who: alice(),
 			amount: slashed_amount,
 		}));
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -181,10 +203,8 @@ fn currency_deposit_into_existing_works() {
 		System::set_block_number(1);
 
 		// Invoke the function under test.
-		assert_ok!(EvmBalances::deposit_into_existing(
-			&alice(),
-			deposited_amount
-		));
+		let imbalance = EvmBalances::deposit_into_existing(&alice(), deposited_amount).unwrap();
+		drop(imbalance);
 
 		// Assert state changes.
 		assert_eq!(
@@ -195,6 +215,8 @@ fn currency_deposit_into_existing_works() {
 			who: alice(),
 			amount: deposited_amount,
 		}));
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -222,6 +244,8 @@ fn currency_deposit_creating_works() {
 		System::assert_has_event(RuntimeEvent::EvmSystem(
 			pallet_evm_system::Event::NewAccount { account: charlie },
 		));
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -237,12 +261,14 @@ fn currency_withdraw_works() {
 		System::set_block_number(1);
 
 		// Invoke the function under test.
-		assert_ok!(EvmBalances::withdraw(
+		let imbalance = EvmBalances::withdraw(
 			&alice(),
 			1000,
 			WithdrawReasons::FEE,
-			ExistenceRequirement::KeepAlive
-		));
+			ExistenceRequirement::KeepAlive,
+		)
+		.unwrap();
+		drop(imbalance);
 
 		// Assert state changes.
 		assert_eq!(
@@ -253,6 +279,8 @@ fn currency_withdraw_works() {
 			who: alice(),
 			amount: withdrawed_amount,
 		}));
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -271,6 +299,8 @@ fn currency_make_free_balance_be_works() {
 
 		// Assert state changes.
 		assert_eq!(EvmBalances::total_balance(&charlie), made_free_balance);
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -297,6 +327,8 @@ fn evm_system_account_should_be_reaped() {
 		System::assert_has_event(RuntimeEvent::EvmSystem(
 			pallet_evm_system::Event::KilledAccount { account: bob() },
 		));
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -338,6 +370,8 @@ fn evm_fee_deduction() {
 		// Refund fees as 5 units
 		<<Test as pallet_evm::Config>::OnChargeTransaction as pallet_evm::OnChargeEVMTransaction<Test>>::correct_and_deposit_fee(&charlie, U256::from(5), U256::from(5), imbalance);
 		assert_eq!(EvmBalances::free_balance(&charlie), 95);
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -374,6 +408,8 @@ fn evm_issuance_after_tip() {
 		let after_tip = <Test as pallet_evm::Config>::Currency::total_issuance();
 
 		assert_eq!(after_tip, (before_tip - (base_fee * 21_000)));
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -410,6 +446,8 @@ fn evm_refunds_should_work() {
 		let total_cost = (U256::from(21_000) * base_fee) + U256::from(1);
 		let after_call = EVM::account_basic(&alice()).0.balance;
 		assert_eq!(after_call, before_call - total_cost);
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -451,6 +489,8 @@ fn evm_refunds_and_priority_should_work() {
 		let after_call = EVM::account_basic(&alice()).0.balance;
 		// The tip is deducted but never refunded to the caller.
 		assert_eq!(after_call, before_call - total_cost);
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -482,6 +522,8 @@ fn evm_call_should_fail_with_priority_greater_than_max_fee() {
 		assert!(result.is_err());
 		// Some used weight is returned as part of the error.
 		assert_eq!(result.unwrap_err().weight, Weight::from_parts(7, 0));
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -512,5 +554,7 @@ fn evm_call_should_succeed_with_priority_equal_to_max_fee() {
 			<Test as pallet_evm::Config>::config(),
 		);
 		assert!(result.is_ok());
+
+		assert_total_issuance_invariant();
 	});
 }

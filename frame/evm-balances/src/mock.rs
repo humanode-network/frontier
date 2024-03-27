@@ -187,7 +187,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 					storage: Default::default(),
 				};
 				map.insert(alice(), init_genesis_account.clone());
-				map.insert(bob(), init_genesis_account);
+				map.insert(bob(), init_genesis_account.clone());
 				map
 			},
 		},
