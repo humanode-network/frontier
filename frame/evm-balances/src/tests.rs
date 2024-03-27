@@ -350,6 +350,34 @@ fn evm_balances_transferring_too_high_value_should_not_panic() {
 }
 
 #[test]
+fn evm_system_removing_account_non_zero_balance() {
+	new_test_ext().execute_with_ext(|_| {
+		// Prepare test preconditions.
+		let contract = H160::from_str("1000000000000000000000000000000000000003").unwrap();
+		EVM::create_account(contract, vec![1, 2, 3]);
+
+		// Transfer some balance to contract address.
+		assert_ok!(EvmBalances::transfer(
+			&alice(),
+			&contract,
+			1000,
+			ExistenceRequirement::KeepAlive
+		));
+
+		assert_eq!(EvmBalances::free_balance(&contract), 1000);
+
+		// Invoke the function under test.
+		EVM::remove_account(&contract);
+
+		// Assert state changes.
+		assert_eq!(EvmBalances::free_balance(&contract), 1000);
+		assert!(EvmSystem::account_exists(&contract));
+
+		assert_total_issuance_invariant();
+	});
+}
+
+#[test]
 fn evm_fee_deduction() {
 	new_test_ext().execute_with_ext(|_| {
 		let charlie = H160::from_str("1000000000000000000000000000000000000003").unwrap();
