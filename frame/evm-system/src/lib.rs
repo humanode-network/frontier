@@ -8,7 +8,7 @@
 use frame_support::traits::StoredMap;
 use scale_codec::{Decode, Encode, FullCodec, MaxEncodedLen};
 use scale_info::TypeInfo;
-use sp_runtime::{traits::One, DispatchError, DispatchResult, RuntimeDebug};
+use sp_runtime::{traits::One, DispatchError, RuntimeDebug};
 
 #[cfg(test)]
 mod mock;
@@ -115,6 +115,26 @@ pub mod pallet {
 	}
 }
 
+/// Some resultant status relevant to account creation.
+#[derive(Eq, PartialEq, RuntimeDebug)]
+pub enum AccountCreationStatus {
+	/// Account was created.
+	Created,
+	/// Account already existed.
+	Existed,
+}
+
+/// Some resultant status relevant to account removal.
+#[derive(Eq, PartialEq, RuntimeDebug)]
+pub enum AccountRemovalStatus {
+	/// Account was destroyed.
+	Reaped,
+	/// Account still exists.
+	Exists,
+	/// Account doesn't exist.
+	NotExists,
+}
+
 impl<T: Config> Pallet<T> {
 	/// Check the account existence.
 	pub fn account_exists(who: &<T as Config>::AccountId) -> bool {
@@ -144,30 +164,29 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Create an account.
-	pub fn create_account(who: &<T as Config>::AccountId) -> DispatchResult {
+	pub fn create_account(who: &<T as Config>::AccountId) -> AccountCreationStatus {
 		if Self::account_exists(who) {
-			return Err(Error::<T>::AccountAlreadyExist.into());
+			return AccountCreationStatus::Existed;
 		}
 
 		Account::<T>::insert(who.clone(), AccountInfo::<_, _>::default());
 		Self::on_created_account(who.clone());
-		Ok(())
+		AccountCreationStatus::Created
 	}
 
 	/// Remove an account.
-	pub fn remove_account(who: &<T as Config>::AccountId) -> DispatchResult {
+	pub fn remove_account(who: &<T as Config>::AccountId) -> AccountRemovalStatus {
 		if !Self::account_exists(who) {
-			return Err(Error::<T>::AccountNotExist.into());
+			return AccountRemovalStatus::NotExists;
 		}
 
 		if Account::<T>::get(who).data != <T as Config>::AccountData::default() {
-			return Err(Error::<T>::AccountDataNotEmpty.into());
+			return AccountRemovalStatus::Exists;
 		}
 
 		Account::<T>::remove(who);
 		Self::on_killed_account(who.clone());
-
-		Ok(())
+		AccountRemovalStatus::Reaped
 	}
 }
 
@@ -180,13 +199,10 @@ impl<T: Config> StoredMap<<T as Config>::AccountId, <T as Config>::AccountData> 
 		k: &<T as Config>::AccountId,
 		f: impl FnOnce(&mut Option<<T as Config>::AccountData>) -> Result<R, E>,
 	) -> Result<R, E> {
-		let account = Account::<T>::get(k);
-		let was_providing = account.data != <T as Config>::AccountData::default();
-
-		let mut maybe_account_data = if was_providing {
-			Some(account.data)
+		let (mut maybe_account_data, was_providing) = if Self::account_exists(k) {
+			(Some(Account::<T>::get(k).data), true)
 		} else {
-			None
+			(None, false)
 		};
 
 		let result = f(&mut maybe_account_data)?;
