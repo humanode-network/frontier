@@ -211,7 +211,9 @@ fn try_mutate_exists_account_removed() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
-		<Account<Test>>::insert(account_id.clone(), AccountInfo { nonce: 1, data: 0 });
+		let nonce = 1;
+		let data = 1;
+		<Account<Test>>::insert(account_id.clone(), AccountInfo { nonce, data });
 
 		// Check test preconditions.
 		assert!(EvmSystem::account_exists(&account_id));
