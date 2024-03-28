@@ -129,8 +129,8 @@ pub enum AccountCreationStatus {
 pub enum AccountRemovalStatus {
 	/// Account was destroyed.
 	Reaped,
-	/// Account still exists.
-	Exists,
+	/// Account still remains.
+	Remains,
 	/// Account doesn't exist.
 	NotExists,
 }
@@ -181,7 +181,7 @@ impl<T: Config> Pallet<T> {
 		}
 
 		if Account::<T>::get(who).data != <T as Config>::AccountData::default() {
-			return AccountRemovalStatus::Exists;
+			return AccountRemovalStatus::Remains;
 		}
 
 		Account::<T>::remove(who);
