@@ -1,7 +1,7 @@
 //! Unit tests.
 
 use frame_support::{assert_noop, assert_ok, weights::Weight};
-use pallet_evm::{FeeCalculator, Runner, FixedGasWeightMapping, GasWeightMapping};
+use pallet_evm::{FeeCalculator, FixedGasWeightMapping, GasWeightMapping, Runner};
 use sp_core::{H160, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
 use sp_std::str::FromStr;
@@ -347,7 +347,7 @@ fn evm_issuance_after_tip() {
 		let before_tip = <Test as pallet_evm::Config>::Currency::total_issuance();
 
 		let gas_limit: u64 = 1_000_000;
- 		let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+		let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
 
 		assert_ok!(<Test as pallet_evm::Config>::Runner::call(
 			alice(),
@@ -387,7 +387,7 @@ fn evm_refunds_should_work() {
 		// to ensure that the difference (max fee VS base fee) is refunded.
 
 		let gas_limit: u64 = 1_000_000;
- 		let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+		let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
 
 		let _ = <Test as pallet_evm::Config>::Runner::call(
 			alice(),
@@ -402,7 +402,7 @@ fn evm_refunds_should_work() {
 			true,
 			true,
 			Some(weight_limit),
- 			Some(0),
+			Some(0),
 			<Test as pallet_evm::Config>::config(),
 		);
 
@@ -426,7 +426,7 @@ fn evm_refunds_and_priority_should_work() {
 		let used_gas = U256::from(21_000);
 
 		let gas_limit: u64 = 1_000_000;
- 		let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+		let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
 
 		let _ = <Test as pallet_evm::Config>::Runner::call(
 			alice(),
@@ -441,7 +441,7 @@ fn evm_refunds_and_priority_should_work() {
 			true,
 			true,
 			Some(weight_limit),
- 			Some(0),
+			Some(0),
 			<Test as pallet_evm::Config>::config(),
 		);
 
@@ -461,7 +461,7 @@ fn evm_call_should_fail_with_priority_greater_than_max_fee() {
 		let tip: u128 = 1_100_000_000;
 
 		let gas_limit: u64 = 1_000_000;
- 		let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+		let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
 
 		let result = <Test as pallet_evm::Config>::Runner::call(
 			alice(),
@@ -476,7 +476,7 @@ fn evm_call_should_fail_with_priority_greater_than_max_fee() {
 			true,
 			true,
 			Some(weight_limit),
- 			Some(0),
+			Some(0),
 			<Test as pallet_evm::Config>::config(),
 		);
 		assert!(result.is_err());
@@ -491,7 +491,7 @@ fn evm_call_should_succeed_with_priority_equal_to_max_fee() {
 		let tip: u128 = 1_000_000_000;
 
 		let gas_limit: u64 = 1_000_000;
- 		let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+		let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
 
 		// Mimics the input for pre-eip-1559 transaction types where `gas_price`
 		// is used for both `max_fee_per_gas` and `max_priority_fee_per_gas`.
@@ -508,7 +508,7 @@ fn evm_call_should_succeed_with_priority_equal_to_max_fee() {
 			true,
 			true,
 			Some(weight_limit),
- 			Some(0),
+			Some(0),
 			<Test as pallet_evm::Config>::config(),
 		);
 		assert!(result.is_ok());
