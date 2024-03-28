@@ -258,7 +258,7 @@ fn currency_withdraw_works() {
 
 #[test]
 fn currency_make_free_balance_be_works() {
-	new_test_ext().execute_with(|| {
+	new_test_ext().execute_with_ext(|_| {
 		// Prepare test preconditions.
 		let charlie = H160::from_str("1000000000000000000000000000000000000003").unwrap();
 		let made_free_balance = 100;
@@ -302,7 +302,7 @@ fn evm_system_account_should_be_reaped() {
 
 #[test]
 fn evm_balances_transferring_too_high_value_should_not_panic() {
-	new_test_ext().execute_with(|| {
+	new_test_ext().execute_with_ext(|_| {
 		// Prepare test preconditions.
 		let charlie = H160::from_str("1000000000000000000000000000000000000003").unwrap();
 		let eve = H160::from_str("1000000000000000000000000000000000000004").unwrap();
@@ -319,7 +319,7 @@ fn evm_balances_transferring_too_high_value_should_not_panic() {
 
 #[test]
 fn evm_fee_deduction() {
-	new_test_ext().execute_with(|| {
+	new_test_ext().execute_with_ext(|_| {
 		let charlie = H160::from_str("1000000000000000000000000000000000000003").unwrap();
 
 		// Seed account
@@ -343,7 +343,7 @@ fn evm_fee_deduction() {
 
 #[test]
 fn evm_issuance_after_tip() {
-	new_test_ext().execute_with(|| {
+	new_test_ext().execute_with_ext(|_| {
 		let before_tip = <Test as pallet_evm::Config>::Currency::total_issuance();
 
 		let gas_limit: u64 = 1_000_000;
@@ -379,7 +379,7 @@ fn evm_issuance_after_tip() {
 
 #[test]
 fn evm_refunds_should_work() {
-	new_test_ext().execute_with(|| {
+	new_test_ext().execute_with_ext(|_| {
 		let before_call = EVM::account_basic(&alice()).0.balance;
 		// Gas price is not part of the actual fee calculations anymore, only the base fee.
 		//
@@ -415,7 +415,7 @@ fn evm_refunds_should_work() {
 
 #[test]
 fn evm_refunds_and_priority_should_work() {
-	new_test_ext().execute_with(|| {
+	new_test_ext().execute_with_ext(|_| {
 		let before_call = EVM::account_basic(&alice()).0.balance;
 		// We deliberately set a base fee + max tip > max fee.
 		// The effective priority tip will be 1GWEI instead 1.5GWEI:
@@ -456,7 +456,7 @@ fn evm_refunds_and_priority_should_work() {
 
 #[test]
 fn evm_call_should_fail_with_priority_greater_than_max_fee() {
-	new_test_ext().execute_with(|| {
+	new_test_ext().execute_with_ext(|_| {
 		// Max priority greater than max fee should fail.
 		let tip: u128 = 1_100_000_000;
 
@@ -487,7 +487,7 @@ fn evm_call_should_fail_with_priority_greater_than_max_fee() {
 
 #[test]
 fn evm_call_should_succeed_with_priority_equal_to_max_fee() {
-	new_test_ext().execute_with(|| {
+	new_test_ext().execute_with_ext(|_| {
 		let tip: u128 = 1_000_000_000;
 
 		let gas_limit: u64 = 1_000_000;
