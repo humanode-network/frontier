@@ -115,24 +115,24 @@ pub mod pallet {
 	}
 }
 
-/// Some resultant status relevant to account creation.
+/// The outcome of the account creation operation.
 #[derive(Eq, PartialEq, RuntimeDebug)]
-pub enum AccountCreationStatus {
+pub enum AccountCreationOutcome {
 	/// Account was created.
 	Created,
-	/// Account already existed.
-	Existed,
+	/// Account already exists in the system, so action was taken.
+	AlreadyExists,
 }
 
-/// Some resultant status relevant to account removal.
+/// The outcome of the account removal operation.
 #[derive(Eq, PartialEq, RuntimeDebug)]
-pub enum AccountRemovalStatus {
-	/// Account was destroyed.
+pub enum AccountRemovalOutcome {
+	/// Account was destroyed and no longer exists.
 	Reaped,
-	/// Account still remains.
-	Remains,
-	/// Account doesn't exist.
-	NotExists,
+	/// Account was non-empty, and it was retained and still exists in the system.
+	Retained,
+	/// Account did not exist in the first place, so no action was taken.
+	DidNotExist,
 }
 
 impl<T: Config> Pallet<T> {
@@ -164,29 +164,29 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Create an account.
-	pub fn create_account(who: &<T as Config>::AccountId) -> AccountCreationStatus {
+	pub fn create_account(who: &<T as Config>::AccountId) -> AccountCreationOutcome {
 		if Self::account_exists(who) {
-			return AccountCreationStatus::Existed;
+			return AccountCreationOutcome::AlreadyExists;
 		}
 
 		Account::<T>::insert(who.clone(), AccountInfo::<_, _>::default());
 		Self::on_created_account(who.clone());
-		AccountCreationStatus::Created
+		AccountCreationOutcome::Created
 	}
 
 	/// Remove an account.
-	pub fn remove_account(who: &<T as Config>::AccountId) -> AccountRemovalStatus {
+	pub fn remove_account(who: &<T as Config>::AccountId) -> AccountRemovalOutcome {
 		if !Self::account_exists(who) {
-			return AccountRemovalStatus::NotExists;
+			return AccountRemovalOutcome::DidNotExist;
 		}
 
 		if Account::<T>::get(who).data != <T as Config>::AccountData::default() {
-			return AccountRemovalStatus::Remains;
+			return AccountRemovalOutcome::Retained;
 		}
 
 		Account::<T>::remove(who);
 		Self::on_killed_account(who.clone());
-		AccountRemovalStatus::Reaped
+		AccountRemovalOutcome::Reaped
 	}
 }
 
