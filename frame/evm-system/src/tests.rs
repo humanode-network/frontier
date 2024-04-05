@@ -32,7 +32,7 @@ fn create_account_works() {
 		// Invoke the function under test.
 		assert_eq!(
 			EvmSystem::create_account(&account_id),
-			AccountCreationStatus::Created
+			AccountCreationOutcome::Created
 		);
 
 		// Assert state changes.
@@ -57,7 +57,7 @@ fn create_account_fails() {
 		// Invoke the function under test.
 		assert_eq!(
 			EvmSystem::create_account(&account_id),
-			AccountCreationStatus::Existed
+			AccountCreationOutcome::AlreadyExists
 		);
 	});
 }
@@ -84,7 +84,7 @@ fn remove_account_works() {
 		// Invoke the function under test.
 		assert_eq!(
 			EvmSystem::remove_account(&account_id),
-			AccountRemovalStatus::Reaped
+			AccountRemovalOutcome::Reaped
 		);
 
 		// Assert state changes.
@@ -108,7 +108,7 @@ fn remove_account_fails() {
 		// Invoke the function under test.
 		assert_eq!(
 			EvmSystem::remove_account(&account_id),
-			AccountRemovalStatus::NotExists
+			AccountRemovalOutcome::DidNotExist
 		);
 	});
 }
