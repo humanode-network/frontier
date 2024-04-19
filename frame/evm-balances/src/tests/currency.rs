@@ -3,7 +3,7 @@
 use frame_support::{assert_noop, assert_ok, traits::Currency};
 use sp_runtime::TokenError;
 
-use crate::{mock::*, *};
+use crate::{mock::*, tests::assert_total_issuance_invariant, *};
 
 #[test]
 fn total_issuance_works() {
@@ -66,6 +66,8 @@ fn deactivate_reactivate_works() {
 		EvmBalances::reactivate(40);
 		// Assert state changes.
 		assert_eq!(<InactiveIssuance<Test>>::get(), 60);
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -90,6 +92,8 @@ fn burn_works() {
 		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE - 100);
 		drop(imbalance);
 		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -106,6 +110,8 @@ fn issue_works() {
 		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE + 100);
 		drop(imbalance);
 		assert_eq!(EvmBalances::total_issuance(), 2 * INIT_BALANCE);
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -142,6 +148,8 @@ fn transfer_works() {
 			to: bob(),
 			amount: transfered_amount,
 		}));
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -182,6 +190,8 @@ fn transfer_works_full_balance() {
 		System::assert_has_event(RuntimeEvent::EvmSystem(
 			pallet_evm_system::Event::KilledAccount { account: alice() },
 		));
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -256,6 +266,8 @@ fn slash_works() {
 			who: alice(),
 			amount: slashed_amount,
 		}));
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -286,6 +298,8 @@ fn slash_works_full_balance() {
 		System::assert_has_event(RuntimeEvent::EvmSystem(
 			pallet_evm_system::Event::KilledAccount { account: alice() },
 		));
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -301,10 +315,8 @@ fn deposit_into_existing_works() {
 		System::set_block_number(1);
 
 		// Invoke the function under test.
-		assert_ok!(EvmBalances::deposit_into_existing(
-			&alice(),
-			deposited_amount
-		));
+		let imbalance = EvmBalances::deposit_into_existing(&alice(), deposited_amount).unwrap();
+		drop(imbalance);
 
 		// Assert state changes.
 		assert_eq!(
@@ -315,6 +327,8 @@ fn deposit_into_existing_works() {
 			who: alice(),
 			amount: deposited_amount,
 		}));
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -376,6 +390,8 @@ fn deposit_creating_works() {
 		System::assert_has_event(RuntimeEvent::EvmSystem(
 			pallet_evm_system::Event::NewAccount { account: charlie },
 		));
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -391,12 +407,14 @@ fn withdraw_works() {
 		System::set_block_number(1);
 
 		// Invoke the function under test.
-		assert_ok!(EvmBalances::withdraw(
+		let imbalance = EvmBalances::withdraw(
 			&alice(),
 			withdrawed_amount,
 			WithdrawReasons::FEE,
-			ExistenceRequirement::KeepAlive
-		));
+			ExistenceRequirement::KeepAlive,
+		)
+		.unwrap();
+		drop(imbalance);
 
 		// Assert state changes.
 		assert_eq!(
@@ -407,6 +425,8 @@ fn withdraw_works() {
 			who: alice(),
 			amount: withdrawed_amount,
 		}));
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -422,12 +442,14 @@ fn withdraw_works_full_balance() {
 		System::set_block_number(1);
 
 		// Invoke the function under test.
-		assert_ok!(EvmBalances::withdraw(
+		let imbalance = EvmBalances::withdraw(
 			&alice(),
 			withdrawed_amount,
-			WithdrawReasons::TRANSFER,
-			ExistenceRequirement::AllowDeath
-		));
+			WithdrawReasons::FEE,
+			ExistenceRequirement::AllowDeath,
+		)
+		.unwrap();
+		drop(imbalance);
 
 		// Assert state changes.
 		assert_eq!(
@@ -442,6 +464,8 @@ fn withdraw_works_full_balance() {
 		System::assert_has_event(RuntimeEvent::EvmSystem(
 			pallet_evm_system::Event::KilledAccount { account: alice() },
 		));
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -502,6 +526,8 @@ fn make_free_balance_be_works() {
 
 		// Assert state changes.
 		assert_eq!(EvmBalances::total_balance(&charlie), made_free_balance);
+
+		assert_total_issuance_invariant();
 	});
 }
 
@@ -528,6 +554,8 @@ fn evm_system_account_should_be_reaped() {
 		System::assert_has_event(RuntimeEvent::EvmSystem(
 			pallet_evm_system::Event::KilledAccount { account: bob() },
 		));
+
+		assert_total_issuance_invariant();
 	});
 }
 
