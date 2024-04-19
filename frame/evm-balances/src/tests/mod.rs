@@ -42,8 +42,8 @@ fn basic_setup_works() {
 fn evm_system_removing_account_non_zero_balance() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test preconditions.
-		let contract = H160::from_str("1000000000000000000000000000000000000003").unwrap();
-		EVM::create_account(contract, vec![1, 2, 3]);
+		let contract = 3;
+		EVM::create_account(H160::from_low_u64_be(contract), vec![1, 2, 3]);
 
 		// Transfer some balance to contract address.
 		assert_ok!(EvmBalances::transfer(
@@ -56,7 +56,7 @@ fn evm_system_removing_account_non_zero_balance() {
 		assert_eq!(EvmBalances::free_balance(&contract), 1000);
 
 		// Invoke the function under test.
-		EVM::remove_account(&contract);
+		EVM::remove_account(&H160::from_low_u64_be(contract));
 
 		// Assert state changes.
 		assert_eq!(EvmBalances::free_balance(&contract), 1000);
