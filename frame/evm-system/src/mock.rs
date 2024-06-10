@@ -21,7 +21,6 @@ use frame_support::traits::{ConstU32, ConstU64};
 use mockall::mock;
 use sp_core::{H160, H256};
 use sp_runtime::{
-	generic,
 	traits::{BlakeTwo256, IdentityLookup},
 	BuildStorage,
 };

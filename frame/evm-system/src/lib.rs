@@ -8,7 +8,7 @@
 use frame_support::traits::StoredMap;
 use scale_codec::{Decode, Encode, FullCodec, MaxEncodedLen};
 use scale_info::TypeInfo;
-use sp_runtime::{traits::One, DispatchError, DispatchResult, RuntimeDebug};
+use sp_runtime::{traits::One, DispatchError, RuntimeDebug};
 
 #[cfg(test)]
 mod mock;
