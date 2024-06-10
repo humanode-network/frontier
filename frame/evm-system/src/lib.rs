@@ -6,9 +6,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::traits::StoredMap;
-use sp_runtime::{traits::One, RuntimeDebug, DispatchResult, DispatchError};
-use scale_codec::{Encode, Decode, MaxEncodedLen, FullCodec};
+use scale_codec::{Decode, Encode, FullCodec, MaxEncodedLen};
 use scale_info::TypeInfo;
+use sp_runtime::{traits::One, DispatchError, DispatchResult, RuntimeDebug};
 
 #[cfg(test)]
 mod mock;
@@ -18,7 +18,17 @@ mod tests;
 pub use pallet::*;
 
 /// Account information.
-#[derive(Clone, Eq, PartialEq, Default, RuntimeDebug, Encode, Decode, TypeInfo, MaxEncodedLen)]
+#[derive(
+	Clone,
+	Eq,
+	PartialEq,
+	Default,
+	RuntimeDebug,
+	Encode,
+	Decode,
+	TypeInfo,
+	MaxEncodedLen
+)]
 pub struct AccountInfo<Index, AccountData> {
 	/// The number of transactions this account has sent.
 	pub nonce: Index,
@@ -31,7 +41,7 @@ pub struct AccountInfo<Index, AccountData> {
 pub mod pallet {
 	use super::*;
 	use frame_support::pallet_prelude::*;
-	use sp_runtime::traits::{MaybeDisplay, AtLeast32Bit};
+	use sp_runtime::traits::{AtLeast32Bit, MaybeDisplay};
 	use sp_std::fmt::Debug;
 
 	#[pallet::pallet]
@@ -52,9 +62,9 @@ pub mod pallet {
 			+ Ord
 			+ MaxEncodedLen;
 
-		/// Account index (aka nonce) type. This stores the number of previous transactions
+		/// Nonce type. This stores the number of previous transactions
 		/// associated with a sender account.
-		type Index: Parameter
+		type Nonce: Parameter
 			+ Member
 			+ MaybeSerializeDeserialize
 			+ Debug
@@ -83,7 +93,7 @@ pub mod pallet {
 		_,
 		Blake2_128Concat,
 		<T as Config>::AccountId,
-		AccountInfo<<T as Config>::Index, <T as Config>::AccountData>,
+		AccountInfo<<T as Config>::Nonce, <T as Config>::AccountData>,
 		ValueQuery,
 	>;
 
@@ -96,13 +106,13 @@ pub mod pallet {
 		KilledAccount { account: <T as Config>::AccountId },
 	}
 
-    #[pallet::error]
-    pub enum Error<T> {
+	#[pallet::error]
+	pub enum Error<T> {
 		/// The account already exists in case creating it.
-        AccountAlreadyExist,
+		AccountAlreadyExist,
 		/// The account doesn't exist in case removing it.
 		AccountNotExist,
-    }
+	}
 }
 
 impl<T: Config> Pallet<T> {
@@ -124,13 +134,13 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Retrieve the account transaction counter from storage.
-	pub fn account_nonce(who: &<T as Config>::AccountId) -> <T as Config>::Index {
+	pub fn account_nonce(who: &<T as Config>::AccountId) -> <T as Config>::Nonce {
 		Account::<T>::get(who).nonce
 	}
 
 	/// Increment a particular account's nonce by 1.
 	pub fn inc_account_nonce(who: &<T as Config>::AccountId) {
-		Account::<T>::mutate(who, |a| a.nonce += <T as pallet::Config>::Index::one());
+		Account::<T>::mutate(who, |a| a.nonce += <T as pallet::Config>::Nonce::one());
 	}
 
 	/// Create an account.
@@ -196,7 +206,7 @@ impl<T: Config> StoredMap<<T as Config>::AccountId, <T as Config>::AccountData> 
 
 impl<T: Config> fp_evm::AccountProvider for Pallet<T> {
 	type AccountId = <T as Config>::AccountId;
-	type Index = <T as Config>::Index;
+	type Nonce = <T as Config>::Nonce;
 
 	fn create_account(who: &Self::AccountId) {
 		let _ = Self::create_account(who);
@@ -206,7 +216,7 @@ impl<T: Config> fp_evm::AccountProvider for Pallet<T> {
 		let _ = Self::remove_account(who);
 	}
 
-	fn account_nonce(who: &Self::AccountId) -> Self::Index {
+	fn account_nonce(who: &Self::AccountId) -> Self::Nonce {
 		Self::account_nonce(who)
 	}
 
