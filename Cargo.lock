@@ -5608,6 +5608,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-evm-balances"
+version = "1.0.0-dev"
+dependencies = [
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-evm",
+ "pallet-evm-system",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "paste",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-evm-chain-id"
 version = "1.0.0-dev"
 dependencies = [
