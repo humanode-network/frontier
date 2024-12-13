@@ -2088,7 +2088,7 @@ checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 [[package]]
 name = "evm"
 version = "0.39.1"
-source = "git+https://github.com/rust-blockchain/evm?rev=b7b82c7e1fc57b7449d6dfa6826600de37cc1e65#b7b82c7e1fc57b7449d6dfa6826600de37cc1e65"
+source = "git+https://github.com/humanode-network/evm?rev=a2fbe7416c8767b125222ead5219cb7347835556#a2fbe7416c8767b125222ead5219cb7347835556"
 dependencies = [
  "auto_impl",
  "environmental",
@@ -2108,7 +2108,7 @@ dependencies = [
 [[package]]
 name = "evm-core"
 version = "0.39.0"
-source = "git+https://github.com/rust-blockchain/evm?rev=b7b82c7e1fc57b7449d6dfa6826600de37cc1e65#b7b82c7e1fc57b7449d6dfa6826600de37cc1e65"
+source = "git+https://github.com/humanode-network/evm?rev=a2fbe7416c8767b125222ead5219cb7347835556#a2fbe7416c8767b125222ead5219cb7347835556"
 dependencies = [
  "parity-scale-codec",
  "primitive-types",
@@ -2119,7 +2119,7 @@ dependencies = [
 [[package]]
 name = "evm-gasometer"
 version = "0.39.0"
-source = "git+https://github.com/rust-blockchain/evm?rev=b7b82c7e1fc57b7449d6dfa6826600de37cc1e65#b7b82c7e1fc57b7449d6dfa6826600de37cc1e65"
+source = "git+https://github.com/humanode-network/evm?rev=a2fbe7416c8767b125222ead5219cb7347835556#a2fbe7416c8767b125222ead5219cb7347835556"
 dependencies = [
  "environmental",
  "evm-core",
@@ -2130,7 +2130,7 @@ dependencies = [
 [[package]]
 name = "evm-runtime"
 version = "0.39.0"
-source = "git+https://github.com/rust-blockchain/evm?rev=b7b82c7e1fc57b7449d6dfa6826600de37cc1e65#b7b82c7e1fc57b7449d6dfa6826600de37cc1e65"
+source = "git+https://github.com/humanode-network/evm?rev=a2fbe7416c8767b125222ead5219cb7347835556#a2fbe7416c8767b125222ead5219cb7347835556"
 dependencies = [
  "auto_impl",
  "environmental",
