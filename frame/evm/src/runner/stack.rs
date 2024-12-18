@@ -48,9 +48,9 @@ use fp_evm::{
 };
 
 use crate::{
-	runner::Runner as RunnerT, AccountCodes, AccountCodesMetadata, AccountProvider, AccountStorages,
-	AddressMapping, BalanceOf, BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction,
-	OnCreate, Pallet, RunnerError,
+	runner::Runner as RunnerT, AccountCodes, AccountCodesMetadata, AccountProvider,
+	AccountStorages, AddressMapping, BalanceOf, BlockHashMapping, Config, Error, Event,
+	FeeCalculator, OnChargeEVMTransaction, OnCreate, Pallet, RunnerError,
 };
 
 #[cfg(feature = "forbid-evm-reentrancy")]
@@ -1008,6 +1008,8 @@ where
 		_gas_cost: GasCost,
 		target: evm::gasometer::StorageTarget,
 	) -> Result<(), ExitError> {
+		log::debug!(target: "evm", "record gas start");
+
 		// If account code or storage slot is in the overlay it is already accounted for and early exit
 		let mut accessed_storage: Option<AccessedStorage> = match target {
 			StorageTarget::Address(address) => {
@@ -1038,6 +1040,8 @@ where
 			.create_contract_limit
 			.unwrap_or_default() as u64;
 
+		log::debug!(target: "evm", "record gas mid -1");
+
 		let (weight_info, recorded) = {
 			let (weight_info, recorded) = self.info_mut();
 			if let Some(weight_info) = weight_info {
@@ -1046,6 +1050,8 @@ where
 				return Ok(());
 			}
 		};
+
+		log::debug!(target: "evm", "record gas mid 0");
 
 		// Record ref_time first
 		// TODO benchmark opcodes, until this is done we do used_gas to weight conversion for ref_time
@@ -1057,6 +1063,8 @@ where
 		} else {
 			return Ok(());
 		};
+
+		log::debug!(target: "evm", "record gas mid 1");
 
 		let mut maybe_record_and_refund = |with_empty_check: bool| -> Result<(), ExitError> {
 			let address = if let Some(AccessedStorage::AccountCodes(address)) = accessed_storage {
@@ -1150,6 +1158,8 @@ where
 			return Err(ExitError::OutOfGas);
 		}
 
+		log::debug!(target: "evm", "record gas mid 2");
+
 		// Cache the storage access
 		match accessed_storage {
 			Some(AccessedStorage::AccountStorages((address, index))) => {
@@ -1161,8 +1171,12 @@ where
 			_ => {}
 		}
 
+		log::debug!(target: "evm", "record gas before end");
+
 		// Record cost
 		self.record_external_cost(None, Some(opcode_proof_size.low_u64()))?;
+
+		log::debug!(target: "evm", "record gas after end");
 		Ok(())
 	}
 
