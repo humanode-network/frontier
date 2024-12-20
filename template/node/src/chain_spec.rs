@@ -265,6 +265,5 @@ fn testnet_genesis(
 			},
 		},
 		ethereum: Default::default(),
-		dynamic_fee: Default::default(),
 	}
 }
