@@ -160,10 +160,10 @@ pallet-ethereum = { version = "4.0.0-dev", path = "frame/ethereum", default-feat
 pallet-evm = { version = "6.0.0-dev", path = "frame/evm", default-features = false }
 pallet-evm-balances = { version = "1.0.0-dev", path = "frame/evm-balances", default-features = false }
 pallet-evm-chain-id = { version = "1.0.0-dev", path = "frame/evm-chain-id", default-features = false }
-pallet-evm-system = { version = "1.0.0-dev", path = "frame/evm-system", default-features = false }
 pallet-evm-precompile-modexp = { version = "2.0.0-dev", path = "frame/evm/precompile/modexp", default-features = false }
 pallet-evm-precompile-sha3fips = { version = "2.0.0-dev", path = "frame/evm/precompile/sha3fips", default-features = false }
 pallet-evm-precompile-simple = { version = "2.0.0-dev", path = "frame/evm/precompile/simple", default-features = false }
+pallet-evm-system = { version = "1.0.0-dev", path = "frame/evm-system", default-features = false }
 pallet-evm-test-vector-support = { version = "1.0.0-dev", path = "frame/evm/test-vector-support" }
 pallet-hotfix-sufficients = { version = "1.0.0", path = "frame/hotfix-sufficients", default-features = false }
 # Frontier Template
@@ -174,3 +174,9 @@ ark-bw6-761 = { version = "0.4.0", default-features = false }
 ark-ec = { version = "0.4.0", default-features = false }
 ark-ff = { version = "0.4.0", default-features = false }
 ark-std = { version = "0.4.0", default-features = false }
+
+[patch."https://github.com/humanode-network/evm"]
+evm = { path = "../evm" }
+evm-core = { path = "../evm/core" }
+evm-gasometer = { path = "../evm/gasometer" }
+evm-runtime = { path = "../evm/runtime" }
