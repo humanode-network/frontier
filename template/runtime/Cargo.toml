@@ -48,7 +48,6 @@ fp-evm = { workspace = true }
 fp-rpc = { workspace = true }
 fp-self-contained = { workspace = true }
 # Frontier FRAME
-pallet-base-fee = { workspace = true }
 pallet-dynamic-fee = { workspace = true }
 pallet-ethereum = { workspace = true }
 pallet-evm = { workspace = true }
@@ -101,7 +100,6 @@ std = [
 	"fp-rpc/std",
 	"fp-self-contained/std",
 	# Frontier FRAME
-	"pallet-base-fee/std",
 	"pallet-dynamic-fee/std",
 	"pallet-ethereum/std",
 	"pallet-evm/std",

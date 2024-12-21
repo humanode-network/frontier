@@ -322,9 +322,18 @@ parameter_types! {
 	pub WeightPerGas: Weight = Weight::from_parts(weight_per_gas(BLOCK_GAS_LIMIT, NORMAL_DISPATCH_RATIO, WEIGHT_MILLISECS_PER_BLOCK), 0);
 }
 
+/// A simple fixed fee per gas calculator.
+pub struct EvmFeePerGas;
+
+impl fp_evm::FeeCalculator for EvmFeePerGas {
+    fn min_gas_price() -> (U256, Weight) {
+        (10_000_000_000_000_u128.into(), Weight::zero())
+    }
+}
+
 impl pallet_evm::Config for Runtime {
 	type AccountProvider = pallet_evm::NativeSystemAccountProvider<Self>;
-	type FeeCalculator = BaseFee;
+	type FeeCalculator = EvmFeePerGas;
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
 	type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
@@ -365,31 +374,6 @@ impl pallet_dynamic_fee::Config for Runtime {
 	type MinGasPriceBoundDivisor = BoundDivision;
 }
 
-parameter_types! {
-	pub DefaultBaseFeePerGas: U256 = U256::from(1_000_000_000);
-	pub DefaultElasticity: Permill = Permill::from_parts(125_000);
-}
-
-pub struct BaseFeeThreshold;
-impl pallet_base_fee::BaseFeeThreshold for BaseFeeThreshold {
-	fn lower() -> Permill {
-		Permill::zero()
-	}
-	fn ideal() -> Permill {
-		Permill::from_parts(500_000)
-	}
-	fn upper() -> Permill {
-		Permill::from_parts(1_000_000)
-	}
-}
-
-impl pallet_base_fee::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type Threshold = BaseFeeThreshold;
-	type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
-	type DefaultElasticity = DefaultElasticity;
-}
-
 impl pallet_hotfix_sufficients::Config for Runtime {
 	type AddressMapping = IdentityAddressMapping;
 	type WeightInfo = pallet_hotfix_sufficients::weights::SubstrateWeight<Runtime>;
@@ -413,7 +397,6 @@ construct_runtime!(
 		EVM: pallet_evm,
 		EVMChainId: pallet_evm_chain_id,
 		DynamicFee: pallet_dynamic_fee,
-		BaseFee: pallet_base_fee,
 		HotfixSufficients: pallet_hotfix_sufficients,
 	}
 );
@@ -775,7 +758,7 @@ impl_runtime_apis! {
 		}
 
 		fn elasticity() -> Option<Permill> {
-			Some(pallet_base_fee::Elasticity::<Runtime>::get())
+			None
 		}
 
 		fn gas_limit_multiplier_support() {}
