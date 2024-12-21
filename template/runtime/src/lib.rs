@@ -649,22 +649,21 @@ impl_runtime_apis! {
 			access_list: Option<Vec<(H160, Vec<H256>)>>,
 		) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
 			let config = if estimate {
-				let mut config = <Runtime as pallet_evm::Config>::config().clone();
-				config.estimate = true;
-				Some(config)
-			} else {
-				None
-			};
+                let mut config = <Runtime as pallet_evm::Config>::config().clone();
+                config.estimate = true;
+                config
+            } else {
+                <Runtime as pallet_evm::Config>::config().clone()
+            };
 
 			let is_transactional = false;
 			let validate = true;
-			let evm_config = config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config());
 			<Runtime as pallet_evm::Config>::Runner::call(
 				from,
 				to,
 				data,
 				value,
-				gas_limit.unique_saturated_into(),
+				gas_limit.low_u64(),
 				max_fee_per_gas,
 				max_priority_fee_per_gas,
 				nonce,
@@ -674,7 +673,7 @@ impl_runtime_apis! {
 				// TODO we probably want to support external cost recording in non-transactional calls
 				None,
 				None,
-				evm_config,
+				&config,
 			).map_err(|err| err.error.into())
 		}
 
@@ -690,21 +689,20 @@ impl_runtime_apis! {
 			access_list: Option<Vec<(H160, Vec<H256>)>>,
 		) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
 			let config = if estimate {
-				let mut config = <Runtime as pallet_evm::Config>::config().clone();
-				config.estimate = true;
-				Some(config)
-			} else {
-				None
-			};
+                let mut config = <Runtime as pallet_evm::Config>::config().clone();
+                config.estimate = true;
+                config
+            } else {
+                <Runtime as pallet_evm::Config>::config().clone()
+            };
 
 			let is_transactional = false;
 			let validate = true;
-			let evm_config = config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config());
 			<Runtime as pallet_evm::Config>::Runner::create(
 				from,
 				data,
 				value,
-				gas_limit.unique_saturated_into(),
+				gas_limit.low_u64(),
 				max_fee_per_gas,
 				max_priority_fee_per_gas,
 				nonce,
@@ -714,7 +712,7 @@ impl_runtime_apis! {
 				// TODO we probably want to support external cost recording in non-transactional calls
 				None,
 				None,
-				evm_config,
+				&config,
 			).map_err(|err| err.error.into())
 		}
 
