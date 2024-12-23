@@ -31,9 +31,10 @@ impl<T: Config<I>, I: 'static> fungible::Inspect<<T as Config<I>>::AccountId> fo
 		_force: Fortitude,
 	) -> Self::Balance {
 		let a = Self::account(who);
-		let untouchable = match preservation {
-			Preservation::Expendable => Zero::zero(),
-			_ => T::ExistentialDeposit::get(),
+		let mut untouchable: T::Balance = Zero::zero();
+		if preservation == Preservation::Expendable && !a.free.is_zero() {
+			// ..then the ED needed..
+			untouchable = untouchable.max(T::ExistentialDeposit::get());
 		};
 		a.free.saturating_sub(untouchable)
 	}
