@@ -349,7 +349,7 @@ impl pallet_evm::Config for Runtime {
 	type CallOrigin = EnsureAccountId20;
 	type WithdrawOrigin = EnsureAccountId20;
 	type AddressMapping = IdentityAddressMapping;
-	type Currency = Balances;
+	type Currency = EvmBalances;
 	type RuntimeEvent = RuntimeEvent;
 	type PrecompilesType = FrontierPrecompiles<Self>;
 	type PrecompilesValue = PrecompilesValue;
