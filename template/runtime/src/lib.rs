@@ -35,7 +35,7 @@ use frame_support::weights::constants::ParityDbWeight as RuntimeDbWeight;
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{ConstU32, ConstU8, FindAuthor, OnFinalize, OnTimestampSet},
+	traits::{ConstU128, ConstU32, ConstU8, FindAuthor, OnFinalize, OnTimestampSet},
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, ConstantMultiplier, IdentityFee, Weight},
 };
 use pallet_grandpa::{
@@ -312,6 +312,24 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
 	}
 }
 
+impl pallet_evm_system::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type AccountId = AccountId;
+    type Index = Index;
+    type AccountData = pallet_evm_balances::AccountData<Balance>;
+    type OnNewAccount = ();
+    type OnKilledAccount = ();
+}
+
+impl pallet_evm_balances::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type AccountId = AccountId;
+    type Balance = Balance;
+    type ExistentialDeposit = ConstU128<1>;
+    type AccountStore = EvmSystem;
+    type DustRemoval = ();
+}
+
 const BLOCK_GAS_LIMIT: u64 = 75_000_000;
 const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
 
@@ -323,7 +341,7 @@ parameter_types! {
 }
 
 impl pallet_evm::Config for Runtime {
-	type AccountProvider = pallet_evm::NativeSystemAccountProvider<Self>;
+	type AccountProvider = EvmSystem;
 	type FeeCalculator = BaseFee;
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
@@ -415,6 +433,8 @@ construct_runtime!(
 		DynamicFee: pallet_dynamic_fee,
 		BaseFee: pallet_base_fee,
 		HotfixSufficients: pallet_hotfix_sufficients,
+		EvmSystem: pallet_evm_system,
+		EvmBalances: pallet_evm_balances,
 	}
 );
 
