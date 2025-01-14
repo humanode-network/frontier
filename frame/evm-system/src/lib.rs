@@ -147,6 +147,11 @@ impl<T: Config> Pallet<T> {
 		Account::<T>::contains_key(who)
 	}
 
+	/// The number of outstanding sufficient references for the account `who`.
+	pub fn sufficients(who: &<T as Config>::AccountId) -> RefCount {
+		Account::<T>::get(who).sufficients
+	}
+
 	/// An account is being created.
 	fn on_created_account(who: <T as Config>::AccountId) {
 		<T as Config>::OnNewAccount::on_new_account(&who);
