@@ -241,8 +241,12 @@ impl<T: Config> StoredMap<<T as Config>::AccountId, <T as Config>::AccountData> 
 				Account::<T>::mutate(k, |a| a.data = data);
 			}
 			(None, true) => {
-				Account::<T>::remove(k);
-				Self::on_killed_account(k.clone());
+				if Self::sufficients(k) != 0 {
+					Account::<T>::mutate(k, |a| a.data = Default::default());
+				} else {
+					Account::<T>::remove(k);
+					Self::on_killed_account(k.clone());
+				}
 			}
 			(None, false) => {
 				// Do nothing.
