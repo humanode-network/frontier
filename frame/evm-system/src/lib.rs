@@ -193,11 +193,14 @@ impl<T: Config> Pallet<T> {
 	pub fn remove_account(who: &<T as Config>::AccountId) -> AccountRemovalOutcome {
 		Account::<T>::mutate_exists(who, |maybe_account| {
 			if let Some(mut account) = maybe_account.take() {
-				match (account.sufficients, account.data == <T as Config>::AccountData::default()) {
+				match (
+					account.sufficients,
+					account.data == <T as Config>::AccountData::default(),
+				) {
 					(0, true) | (1, true) => {
 						Self::on_killed_account(who.clone());
 						AccountRemovalOutcome::Reaped
-					},
+					}
 					(0, false) => {
 						*maybe_account = Some(account);
 						AccountRemovalOutcome::Retained
@@ -206,7 +209,7 @@ impl<T: Config> Pallet<T> {
 						account.sufficients = x - 1;
 						*maybe_account = Some(account);
 						AccountRemovalOutcome::Retained
-					},
+					}
 				}
 			} else {
 				AccountRemovalOutcome::DidNotExist
