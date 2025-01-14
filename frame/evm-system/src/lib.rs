@@ -17,6 +17,9 @@ mod tests;
 
 pub use pallet::*;
 
+/// Type used to encode the number of references an account has.
+pub type RefCount = u32;
+
 /// Account information.
 #[derive(
 	Clone,
@@ -32,6 +35,9 @@ pub use pallet::*;
 pub struct AccountInfo<Index, AccountData> {
 	/// The number of transactions this account has sent.
 	pub nonce: Index,
+	/// The number of modules that allow this account to exist for their own purposes only. The
+	/// account may not be reaped until this is zero.
+	pub sufficients: RefCount,
 	/// The additional data that belongs to this account. Used to store the balance(s) in a lot of
 	/// chains.
 	pub data: AccountData,
