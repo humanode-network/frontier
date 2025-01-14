@@ -46,19 +46,38 @@ fn create_account_works() {
 	});
 }
 
-/// This test verifies that creating account fails when the account already exists.
+/// This test verifies that sufficients are increased during creating account when the account already exists.
 #[test]
-fn create_account_fails() {
+fn create_account_sufficients_increased() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
-		<Account<Test>>::insert(account_id.clone(), AccountInfo::<_, _>::default());
+		<Account<Test>>::insert(
+			account_id.clone(),
+			AccountInfo {
+				sufficients: 1,
+				..Default::default()
+			},
+		);
+
+		// Check test preconditions.
+		assert_eq!(EvmSystem::sufficients(&account_id), 1);
+
+		// Set mock expectations.
+		let on_new_account_ctx = MockDummyOnNewAccount::on_new_account_context();
+		on_new_account_ctx.expect().never();
 
 		// Invoke the function under test.
-		assert_storage_noop!(assert_eq!(
+		assert_eq!(
 			EvmSystem::create_account(&account_id),
 			AccountCreationOutcome::AlreadyExists
-		));
+		);
+
+		// Assert state changes.
+		assert_eq!(EvmSystem::sufficients(&account_id), 2);
+
+		// Assert mock invocations.
+		on_new_account_ctx.checkpoint();
 	});
 }
 
@@ -180,8 +199,16 @@ fn try_mutate_exists_account_updated() {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
 		let nonce = 1;
+		let sufficients = 0;
 		let data = 1;
-		<Account<Test>>::insert(account_id.clone(), AccountInfo { nonce, data });
+		<Account<Test>>::insert(
+			account_id.clone(),
+			AccountInfo {
+				nonce,
+				sufficients,
+				data,
+			},
+		);
 
 		// Check test preconditions.
 		assert!(EvmSystem::account_exists(&account_id));
@@ -212,8 +239,16 @@ fn try_mutate_exists_account_removed() {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
 		let nonce = 1;
+		let sufficients = 0;
 		let data = 1;
-		<Account<Test>>::insert(account_id.clone(), AccountInfo { nonce, data });
+		<Account<Test>>::insert(
+			account_id.clone(),
+			AccountInfo {
+				nonce,
+				sufficients,
+				data,
+			},
+		);
 
 		// Check test preconditions.
 		assert!(EvmSystem::account_exists(&account_id));
@@ -281,8 +316,16 @@ fn try_mutate_exists_fails_without_changes() {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
 		let nonce = 1;
+		let sufficients = 0;
 		let data = 1;
-		<Account<Test>>::insert(account_id.clone(), AccountInfo { nonce, data });
+		<Account<Test>>::insert(
+			account_id.clone(),
+			AccountInfo {
+				nonce,
+				sufficients,
+				data,
+			},
+		);
 
 		// Check test preconditions.
 		assert!(EvmSystem::account_exists(&account_id));
