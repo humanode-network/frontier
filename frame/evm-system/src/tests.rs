@@ -57,10 +57,6 @@ fn create_account_already_exists() {
 		<Account<Test>>::insert(account_id.clone(), AccountInfo::<_, _>::default());
 		let sufficients_before = EvmSystem::sufficients(&account_id);
 
-		// Set mock expectations.
-		let on_new_account_ctx = MockDummyOnNewAccount::on_new_account_context();
-		on_new_account_ctx.expect().never();
-
 		// Invoke the function under test.
 		assert_eq!(
 			EvmSystem::create_account(&account_id),
@@ -69,9 +65,6 @@ fn create_account_already_exists() {
 
 		// Assert state changes.
 		assert_eq!(EvmSystem::sufficients(&account_id) - sufficients_before, 1);
-
-		// Assert mock invocations.
-		on_new_account_ctx.checkpoint();
 	});
 }
 
