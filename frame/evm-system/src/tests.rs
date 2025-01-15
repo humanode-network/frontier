@@ -210,7 +210,7 @@ fn try_mutate_exists_account_created() {
 /// This test verifies that try_mutate_exists works as expected in case data was providing
 /// and returned data is `Some`. As a result, the account has been updated.
 #[test]
-fn try_mutate_exists_account_updated() {
+fn try_mutate_exists_account_updated_not_default_account_data() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
@@ -248,7 +248,41 @@ fn try_mutate_exists_account_updated() {
 }
 
 /// This test verifies that try_mutate_exists works as expected in case data was providing
-/// and returned data is `None`. As a result, the account has been removed.
+/// and returned data is `None` and sufficients are not 0. As a result, the account has been updated.
+#[test]
+fn try_mutate_exists_account_updated_default_account_data() {
+	new_test_ext().execute_with_ext(|_| {
+		// Prepare test data.
+		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
+		let nonce = 1;
+		let sufficients = 1;
+		let data = 1;
+		<Account<Test>>::insert(
+			account_id.clone(),
+			AccountInfo {
+				nonce,
+				sufficients,
+				data,
+			},
+		);
+
+		// Check test preconditions.
+		assert!(EvmSystem::account_exists(&account_id));
+
+		// Invoke the function under test.
+		EvmSystem::try_mutate_exists(&account_id, |maybe_data| -> Result<(), DispatchError> {
+			*maybe_data = None;
+			Ok(())
+		})
+		.unwrap();
+
+		// Assert state changes.
+		assert!(EvmSystem::account_exists(&account_id));
+	});
+}
+
+/// This test verifies that try_mutate_exists works as expected in case data was providing
+/// and returned data is `None` and sufficients are 0. As a result, the account has been removed.
 #[test]
 fn try_mutate_exists_account_removed() {
 	new_test_ext().execute_with_ext(|_| {
