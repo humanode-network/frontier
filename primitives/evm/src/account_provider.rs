@@ -22,14 +22,14 @@ pub trait AccountProvider {
 	/// for particular account.
 	type Index: AtLeast32Bit;
 
-	/// Creates a new account in accounts records.
+	/// Creates a new contract account record in accounts records.
 	///
 	/// The account associated with new created address EVM.
-	fn create_account(who: &Self::AccountId);
-	/// Removes an account from accounts records.
+	fn create_contract_account_record(who: &Self::AccountId);
+	/// Removes an contract account record from accounts records.
 	///
 	/// The account associated with removed address from EVM.
-	fn remove_account(who: &Self::AccountId);
+	fn remove_contract_account_record(who: &Self::AccountId);
 	/// Return current account nonce value.
 	///
 	/// Used to represent account basic information in EVM format.

@@ -165,8 +165,8 @@ impl<T: Config> Pallet<T> {
 		Account::<T>::mutate(who, |a| a.nonce += <T as pallet::Config>::Index::one());
 	}
 
-	/// Create an account having code.
-	pub fn create_code_account(who: &<T as Config>::AccountId) -> AccountCreationOutcome {
+	/// Create a new record related to contract account.
+	pub fn create_contract_account_record(who: &<T as Config>::AccountId) -> AccountCreationOutcome {
 		if Self::account_exists(who) {
 			return AccountCreationOutcome::AlreadyExists;
 		}
@@ -179,8 +179,8 @@ impl<T: Config> Pallet<T> {
 		AccountCreationOutcome::Created
 	}
 
-	/// Remove an account having code.
-	pub fn remove_code_account(who: &<T as Config>::AccountId) -> AccountRemovalOutcome {
+	/// Remove an existed record related to contract account.
+	pub fn remove_contract_account_record(who: &<T as Config>::AccountId) -> AccountRemovalOutcome {
 		if !Self::account_exists(who) {
 			return AccountRemovalOutcome::DidNotExist;
 		}
@@ -247,12 +247,12 @@ impl<T: Config> fp_evm::AccountProvider for Pallet<T> {
 	type AccountId = <T as Config>::AccountId;
 	type Index = <T as Config>::Index;
 
-	fn create_account(who: &Self::AccountId) {
-		let _ = Self::create_code_account(who);
+	fn create_contract_account_record(who: &Self::AccountId) {
+		let _ = Self::create_contract_account_record(who);
 	}
 
-	fn remove_account(who: &Self::AccountId) {
-		let _ = Self::remove_code_account(who);
+	fn remove_contract_account_record(who: &Self::AccountId) {
+		let _ = Self::remove_contract_account_record(who);
 	}
 
 	fn account_nonce(who: &Self::AccountId) -> Self::Index {

@@ -31,7 +31,7 @@ fn create_account_works() {
 
 		// Invoke the function under test.
 		assert_eq!(
-			EvmSystem::create_account(&account_id),
+			EvmSystem::create_contract_account_record(&account_id),
 			AccountCreationOutcome::Created
 		);
 
@@ -56,7 +56,7 @@ fn create_account_fails() {
 
 		// Invoke the function under test.
 		assert_storage_noop!(assert_eq!(
-			EvmSystem::create_account(&account_id),
+			EvmSystem::create_contract_account_record(&account_id),
 			AccountCreationOutcome::AlreadyExists
 		));
 	});
@@ -83,7 +83,7 @@ fn remove_account_works() {
 
 		// Invoke the function under test.
 		assert_eq!(
-			EvmSystem::remove_account(&account_id),
+			EvmSystem::remove_contract_account_record(&account_id),
 			AccountRemovalOutcome::Reaped
 		);
 
@@ -107,7 +107,7 @@ fn remove_account_fails() {
 
 		// Invoke the function under test.
 		assert_storage_noop!(assert_eq!(
-			EvmSystem::remove_account(&account_id),
+			EvmSystem::remove_contract_account_record(&account_id),
 			AccountRemovalOutcome::DidNotExist
 		));
 	});
