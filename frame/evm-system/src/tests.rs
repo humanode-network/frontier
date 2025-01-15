@@ -75,9 +75,10 @@ fn create_account_already_exists() {
 	});
 }
 
-/// This test verifies that removing account works in the happy path.
+/// This test verifies that removing account logic works as expected returning
+/// [`AccountRemovalOutcome::Reaped`] in case account data is default and sufficient is 0.
 #[test]
-fn remove_account_works() {
+fn remove_account_reaped() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
@@ -111,9 +112,10 @@ fn remove_account_works() {
 	});
 }
 
-/// This test verifies that removing account fails when the account doesn't exist.
+/// This test verifies that removing account logic works as expected returning
+/// [`AccountRemovalOutcome::DidNotExist`] in case account did not exist.
 #[test]
-fn remove_account_fails() {
+fn remove_account_did_not_exist() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
@@ -123,6 +125,33 @@ fn remove_account_fails() {
 			EvmSystem::remove_account(&account_id),
 			AccountRemovalOutcome::DidNotExist
 		));
+	});
+}
+
+/// This test verifies that removing account logic works as expected returning
+/// [`AccountRemovalOutcome::Retained`] in case sufficients are greater than 1.
+#[test]
+fn remove_account_retained() {
+	new_test_ext().execute_with_ext(|_| {
+		// Prepare test data.
+		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
+		<Account<Test>>::insert(
+			account_id.clone(),
+			AccountInfo {
+				sufficients: 2,
+				..Default::default()
+			},
+		);
+		let sufficients_before = EvmSystem::sufficients(&account_id);
+
+		// Invoke the function under test.
+		assert_eq!(
+			EvmSystem::remove_account(&account_id),
+			AccountRemovalOutcome::Retained
+		);
+
+		// Assert state changes.
+		assert_eq!(sufficients_before - EvmSystem::sufficients(&account_id), 1);
 	});
 }
 
