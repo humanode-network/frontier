@@ -8,6 +8,7 @@
 use frame_support::traits::StoredMap;
 use scale_codec::{Decode, Encode, FullCodec, MaxEncodedLen};
 use scale_info::TypeInfo;
+use sp_core::H160;
 use sp_runtime::{traits::One, DispatchError, RuntimeDebug};
 
 #[cfg(test)]
@@ -60,7 +61,8 @@ pub mod pallet {
 			+ Debug
 			+ MaybeDisplay
 			+ Ord
-			+ MaxEncodedLen;
+			+ MaxEncodedLen
+			+ Into<H160>;
 
 		/// Account index (aka nonce) type. This stores the number of previous transactions
 		/// associated with a sender account.
@@ -184,6 +186,10 @@ impl<T: Config> Pallet<T> {
 			return AccountRemovalOutcome::Retained;
 		}
 
+		if !pallet_evm::Pallet::<T>::is_account_empty(&who.clone().into()) {
+			return AccountRemovalOutcome::Retained;
+		}
+
 		Account::<T>::remove(who);
 		Self::on_killed_account(who.clone());
 		AccountRemovalOutcome::Reaped
@@ -216,8 +222,12 @@ impl<T: Config> StoredMap<<T as Config>::AccountId, <T as Config>::AccountData> 
 				Account::<T>::mutate(k, |a| a.data = data);
 			}
 			(None, true) => {
-				Account::<T>::remove(k);
-				Self::on_killed_account(k.clone());
+				if pallet_evm::Pallet::<T>::is_account_empty(&k.clone().into()) {
+					Account::<T>::remove(k);
+					Self::on_killed_account(k.clone());
+				} else {
+					Account::<T>::mutate(k, |a| a.data = Default::default());
+				}
 			}
 			(None, false) => {
 				// Do nothing.
