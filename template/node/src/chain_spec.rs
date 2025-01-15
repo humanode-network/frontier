@@ -261,6 +261,16 @@ fn testnet_genesis(
 						code: vec![0x00],
 					},
 				);
+                map.insert(
+					H160::from_str("0x5bF873526Af0f919EEE7344752e800CCdBE2d829")
+						.expect("internal H160 is valid; qed"),
+					fp_evm::GenesisAccount {
+						balance: U256::from(1_000_000_000_000_000_000_000_000u128),
+						code: Default::default(),
+						nonce: Default::default(),
+						storage: Default::default(),
+					},
+				);
 				map
 			},
 		},
