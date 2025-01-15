@@ -208,7 +208,7 @@ impl<T: Config> Pallet<T> {
 						AccountRemovalOutcome::Retained
 					}
 					(x, _) => {
-						account.sufficients = x - 1;
+						account.sufficients = x.saturating_sub(1);
 						*maybe_account = Some(account);
 						AccountRemovalOutcome::Retained
 					}
