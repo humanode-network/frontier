@@ -176,15 +176,17 @@ impl<T: Config> Pallet<T> {
 
 	/// Create an account.
 	pub fn create_account(who: &<T as Config>::AccountId) -> AccountCreationOutcome {
-		Account::<T>::mutate(who, |a| {
-			if a.sufficients == 0 {
-				// Account is being created.
-				a.sufficients = 1;
+		Account::<T>::mutate_exists(who, |maybe_account| match maybe_account {
+			Some(ref mut account) => {
+				account.sufficients = account.sufficients.saturating_add(1);
+				AccountCreationOutcome::AlreadyExists
+			}
+			new_account @ None => {
+				let mut account: AccountInfo<_, _> = Default::default();
+				account.sufficients = 1;
+				*new_account = Some(account);
 				Self::on_created_account(who.clone());
 				AccountCreationOutcome::Created
-			} else {
-				a.sufficients = a.sufficients.saturating_add(1);
-				AccountCreationOutcome::AlreadyExists
 			}
 		})
 	}
