@@ -8,9 +8,10 @@ use sp_core::H160;
 
 use crate::{mock::*, *};
 
-/// This test verifies that creating account works in the happy path.
+/// This test verifies that creating account logic works as expected returning
+/// [`AccountCreationOutcome::Created`] in case it's a new account.
 #[test]
-fn create_account_works() {
+fn create_account_created() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
@@ -46,22 +47,15 @@ fn create_account_works() {
 	});
 }
 
-/// This test verifies that sufficients are increased during creating account when the account already exists.
+/// This test verifies that creating account logic as expected returning
+// [`AccountCreationOutcome::AlreadyExists`] in case account already exists.
 #[test]
-fn create_account_sufficients_increased() {
+fn create_account_already_exists() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
-		<Account<Test>>::insert(
-			account_id.clone(),
-			AccountInfo {
-				sufficients: 1,
-				..Default::default()
-			},
-		);
-
-		// Check test preconditions.
-		assert_eq!(EvmSystem::sufficients(&account_id), 1);
+		<Account<Test>>::insert(account_id.clone(), AccountInfo::<_, _>::default());
+		let sufficients_before = EvmSystem::sufficients(&account_id);
 
 		// Set mock expectations.
 		let on_new_account_ctx = MockDummyOnNewAccount::on_new_account_context();
@@ -74,7 +68,7 @@ fn create_account_sufficients_increased() {
 		);
 
 		// Assert state changes.
-		assert_eq!(EvmSystem::sufficients(&account_id), 2);
+		assert_eq!(EvmSystem::sufficients(&account_id) - sufficients_before, 1);
 
 		// Assert mock invocations.
 		on_new_account_ctx.checkpoint();
