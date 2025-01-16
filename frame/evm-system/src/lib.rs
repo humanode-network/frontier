@@ -206,14 +206,11 @@ impl<T: Config> StoredMap<<T as Config>::AccountId, <T as Config>::AccountData> 
 		k: &<T as Config>::AccountId,
 		f: impl FnOnce(&mut Option<<T as Config>::AccountData>) -> Result<R, E>,
 	) -> Result<R, E> {
-		let mut had_code = false;
-
-		let (mut maybe_account_data, was_providing) = if Self::account_exists(k) {
+		let (mut maybe_account_data, had_code, was_providing) = if Self::account_exists(k) {
 			let account_info = Account::<T>::get(k);
-			had_code = account_info.has_code;
-			(Some(account_info.data), true)
+			(Some(account_info.data), account_info.has_code, true)
 		} else {
-			(None, false)
+			(None, false, false)
 		};
 
 		let result = f(&mut maybe_account_data)?;
