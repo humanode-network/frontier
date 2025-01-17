@@ -59,7 +59,9 @@ fn create_contract_account_fails() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
-		<Account<Test>>::insert(account_id.clone(), AccountInfo::<_, _>::default());
+		let mut account_info = AccountInfo::<_, _>::default();
+		account_info.has_code = true;
+		<Account<Test>>::insert(account_id.clone(), account_info);
 
 		// Invoke the function under test.
 		assert_storage_noop!(assert_eq!(
