@@ -32,6 +32,8 @@ pub use pallet::*;
 pub struct AccountInfo<Index, AccountData> {
 	/// The number of transactions this account has sent.
 	pub nonce: Index,
+	/// An indicator representing whether the account has code or not.
+	pub has_code: bool,
 	/// The additional data that belongs to this account. Used to store the balance(s) in a lot of
 	/// chains.
 	pub data: AccountData,
@@ -163,24 +165,32 @@ impl<T: Config> Pallet<T> {
 		Account::<T>::mutate(who, |a| a.nonce += <T as pallet::Config>::Index::one());
 	}
 
-	/// Create an account.
-	pub fn create_account(who: &<T as Config>::AccountId) -> AccountCreationOutcome {
+	/// Create a new record related to contract account.
+	pub fn create_contract_account(
+		who: &<T as Config>::AccountId,
+	) -> AccountCreationOutcome {
 		if Self::account_exists(who) {
+			Account::<T>::mutate(who, |account| account.has_code = true);
 			return AccountCreationOutcome::AlreadyExists;
 		}
 
-		Account::<T>::insert(who.clone(), AccountInfo::<_, _>::default());
+		let mut account_info = AccountInfo::<_, _>::default();
+		account_info.has_code = true;
+
+		Account::<T>::insert(who.clone(), account_info);
 		Self::on_created_account(who.clone());
 		AccountCreationOutcome::Created
 	}
 
-	/// Remove an account.
-	pub fn remove_account(who: &<T as Config>::AccountId) -> AccountRemovalOutcome {
+	/// Remove an existed record related to contract account.
+	pub fn remove_contract_account(who: &<T as Config>::AccountId) -> AccountRemovalOutcome {
 		if !Self::account_exists(who) {
 			return AccountRemovalOutcome::DidNotExist;
 		}
 
-		if Account::<T>::get(who).data != <T as Config>::AccountData::default() {
+		let account_info = Account::<T>::get(who);
+
+		if !account_info.has_code || account_info.data != <T as Config>::AccountData::default() {
 			return AccountRemovalOutcome::Retained;
 		}
 
@@ -199,10 +209,11 @@ impl<T: Config> StoredMap<<T as Config>::AccountId, <T as Config>::AccountData> 
 		k: &<T as Config>::AccountId,
 		f: impl FnOnce(&mut Option<<T as Config>::AccountData>) -> Result<R, E>,
 	) -> Result<R, E> {
-		let (mut maybe_account_data, was_providing) = if Self::account_exists(k) {
-			(Some(Account::<T>::get(k).data), true)
+		let (mut maybe_account_data, had_code, was_providing) = if Self::account_exists(k) {
+			let account_info = Account::<T>::get(k);
+			(Some(account_info.data), account_info.has_code, true)
 		} else {
-			(None, false)
+			(None, false, false)
 		};
 
 		let result = f(&mut maybe_account_data)?;
@@ -216,8 +227,12 @@ impl<T: Config> StoredMap<<T as Config>::AccountId, <T as Config>::AccountData> 
 				Account::<T>::mutate(k, |a| a.data = data);
 			}
 			(None, true) => {
-				Account::<T>::remove(k);
-				Self::on_killed_account(k.clone());
+				if had_code {
+					Account::<T>::mutate(k, |a| a.data = Default::default());
+				} else {
+					Account::<T>::remove(k);
+					Self::on_killed_account(k.clone());
+				}
 			}
 			(None, false) => {
 				// Do nothing.
@@ -232,12 +247,12 @@ impl<T: Config> fp_evm::AccountProvider for Pallet<T> {
 	type AccountId = <T as Config>::AccountId;
 	type Index = <T as Config>::Index;
 
-	fn create_account(who: &Self::AccountId) {
-		let _ = Self::create_account(who);
+	fn create_contract_account(who: &Self::AccountId) {
+		let _ = Self::create_contract_account(who);
 	}
 
-	fn remove_account(who: &Self::AccountId) {
-		let _ = Self::remove_account(who);
+	fn remove_contract_account(who: &Self::AccountId) {
+		let _ = Self::remove_contract_account(who);
 	}
 
 	fn account_nonce(who: &Self::AccountId) -> Self::Index {

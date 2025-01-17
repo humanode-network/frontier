@@ -795,7 +795,7 @@ impl<T: Config> Pallet<T> {
 	pub fn remove_account(address: &H160) {
 		if <AccountCodes<T>>::contains_key(address) {
 			let account_id = T::AddressMapping::into_account_id(*address);
-			T::AccountProvider::remove_account(&account_id);
+			T::AccountProvider::remove_contract_account(&account_id);
 		}
 
 		<AccountCodes<T>>::remove(address);
@@ -812,7 +812,7 @@ impl<T: Config> Pallet<T> {
 
 		if !<AccountCodes<T>>::contains_key(address) {
 			let account_id = T::AddressMapping::into_account_id(address);
-			T::AccountProvider::create_account(&account_id);
+			T::AccountProvider::create_contract_account(&account_id);
 		}
 
 		// Update metadata.
@@ -1067,10 +1067,10 @@ impl<T: frame_system::Config> AccountProvider for NativeSystemAccountProvider<T>
 		frame_system::Pallet::<T>::inc_account_nonce(&who)
 	}
 
-	fn create_account(who: &Self::AccountId) {
+	fn create_contract_account(who: &Self::AccountId) {
 		let _ = frame_system::Pallet::<T>::inc_sufficients(&who);
 	}
-	fn remove_account(who: &Self::AccountId) {
+	fn remove_contract_account(who: &Self::AccountId) {
 		let _ = frame_system::Pallet::<T>::dec_sufficients(&who);
 	}
 }
