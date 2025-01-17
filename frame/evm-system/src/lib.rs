@@ -166,7 +166,9 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Create a new record related to contract account.
-	pub fn create_contract_account_record(who: &<T as Config>::AccountId) -> AccountCreationOutcome {
+	pub fn create_contract_account_record(
+		who: &<T as Config>::AccountId,
+	) -> AccountCreationOutcome {
 		if Self::account_exists(who) {
 			return AccountCreationOutcome::AlreadyExists;
 		}
