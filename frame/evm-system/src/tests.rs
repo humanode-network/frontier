@@ -8,9 +8,9 @@ use sp_core::H160;
 
 use crate::{mock::*, *};
 
-/// This test verifies that creating contract account record works in the happy path.
+/// This test verifies that creating contract account works in the happy path.
 #[test]
-fn create_contract_account_record_works() {
+fn create_contract_account_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
@@ -31,7 +31,7 @@ fn create_contract_account_record_works() {
 
 		// Invoke the function under test.
 		assert_eq!(
-			EvmSystem::create_contract_account_record(&account_id),
+			EvmSystem::create_contract_account(&account_id),
 			AccountCreationOutcome::Created
 		);
 
@@ -53,9 +53,9 @@ fn create_contract_account_record_works() {
 	});
 }
 
-/// This test verifies that creating contract account record fails when the account record already exists.
+/// This test verifies that creating contract account fails when the account record already exists.
 #[test]
-fn create_contract_account_record_fails() {
+fn create_contract_account_fails() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
@@ -63,15 +63,15 @@ fn create_contract_account_record_fails() {
 
 		// Invoke the function under test.
 		assert_storage_noop!(assert_eq!(
-			EvmSystem::create_contract_account_record(&account_id),
+			EvmSystem::create_contract_account(&account_id),
 			AccountCreationOutcome::AlreadyExists
 		));
 	});
 }
 
-/// This test verifies that removing contract account record works in the happy path.
+/// This test verifies that removing contract account works in the happy path.
 #[test]
-fn remove_contract_account_record_works() {
+fn remove_contract_account_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
@@ -92,7 +92,7 @@ fn remove_contract_account_record_works() {
 
 		// Invoke the function under test.
 		assert_eq!(
-			EvmSystem::remove_contract_account_record(&account_id),
+			EvmSystem::remove_contract_account(&account_id),
 			AccountRemovalOutcome::Reaped
 		);
 
@@ -107,7 +107,7 @@ fn remove_contract_account_record_works() {
 	});
 }
 
-/// This test verifies that removing contract account record fails when the account doesn't exist.
+/// This test verifies that removing contract account fails when the account doesn't exist.
 #[test]
 fn remove_contract_account_code_fails_did_not_exist() {
 	new_test_ext().execute_with_ext(|_| {
@@ -116,13 +116,13 @@ fn remove_contract_account_code_fails_did_not_exist() {
 
 		// Invoke the function under test.
 		assert_storage_noop!(assert_eq!(
-			EvmSystem::remove_contract_account_record(&account_id),
+			EvmSystem::remove_contract_account(&account_id),
 			AccountRemovalOutcome::DidNotExist
 		));
 	});
 }
 
-/// This test verifies that removing contract account record fails when the account record
+/// This test verifies that removing contract account fails when the account record
 /// indicator about code existence is false.
 #[test]
 fn remove_contract_account_code_fails_has_code_false() {
@@ -135,13 +135,13 @@ fn remove_contract_account_code_fails_has_code_false() {
 
 		// Invoke the function under test.
 		assert_storage_noop!(assert_eq!(
-			EvmSystem::remove_contract_account_record(&account_id),
+			EvmSystem::remove_contract_account(&account_id),
 			AccountRemovalOutcome::Retained
 		));
 	});
 }
 
-/// This test verifies that removing contract account record fails when the account record
+/// This test verifies that removing contract account fails when the account record
 /// contains some account data.
 #[test]
 fn remove_contract_account_code_fails_some_account_data() {
@@ -154,7 +154,7 @@ fn remove_contract_account_code_fails_some_account_data() {
 
 		// Invoke the function under test.
 		assert_storage_noop!(assert_eq!(
-			EvmSystem::remove_contract_account_record(&account_id),
+			EvmSystem::remove_contract_account(&account_id),
 			AccountRemovalOutcome::Retained
 		));
 	});

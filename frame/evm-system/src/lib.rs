@@ -166,7 +166,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Create a new record related to contract account.
-	pub fn create_contract_account_record(
+	pub fn create_contract_account(
 		who: &<T as Config>::AccountId,
 	) -> AccountCreationOutcome {
 		if Self::account_exists(who) {
@@ -183,7 +183,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Remove an existed record related to contract account.
-	pub fn remove_contract_account_record(who: &<T as Config>::AccountId) -> AccountRemovalOutcome {
+	pub fn remove_contract_account(who: &<T as Config>::AccountId) -> AccountRemovalOutcome {
 		if !Self::account_exists(who) {
 			return AccountRemovalOutcome::DidNotExist;
 		}
@@ -247,12 +247,12 @@ impl<T: Config> fp_evm::AccountProvider for Pallet<T> {
 	type AccountId = <T as Config>::AccountId;
 	type Index = <T as Config>::Index;
 
-	fn create_contract_account_record(who: &Self::AccountId) {
-		let _ = Self::create_contract_account_record(who);
+	fn create_contract_account(who: &Self::AccountId) {
+		let _ = Self::create_contract_account(who);
 	}
 
-	fn remove_contract_account_record(who: &Self::AccountId) {
-		let _ = Self::remove_contract_account_record(who);
+	fn remove_contract_account(who: &Self::AccountId) {
+		let _ = Self::remove_contract_account(who);
 	}
 
 	fn account_nonce(who: &Self::AccountId) -> Self::Index {
