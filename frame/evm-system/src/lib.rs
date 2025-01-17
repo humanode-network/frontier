@@ -170,6 +170,7 @@ impl<T: Config> Pallet<T> {
 		who: &<T as Config>::AccountId,
 	) -> AccountCreationOutcome {
 		if Self::account_exists(who) {
+			Account::<T>::mutate(who, |account| account.has_code = true);
 			return AccountCreationOutcome::AlreadyExists;
 		}
 
