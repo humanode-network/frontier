@@ -8,9 +8,9 @@ use sp_core::H160;
 
 use crate::{mock::*, *};
 
-/// This test verifies that creating contract account works in the happy path.
+/// This test verifies that creating evm managed account works in the happy path.
 #[test]
-fn create_contract_account_works() {
+fn create_evm_managed_account_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
@@ -31,7 +31,7 @@ fn create_contract_account_works() {
 
 		// Invoke the function under test.
 		assert_eq!(
-			EvmSystem::create_contract_account(&account_id),
+			EvmSystem::create_evm_managed_account(&account_id),
 			AccountCreationOutcome::Created
 		);
 
@@ -40,7 +40,7 @@ fn create_contract_account_works() {
 		assert_eq!(
 			<Account<Test>>::get(&account_id),
 			AccountInfo {
-				has_code: true,
+				managed_by_evm: true,
 				..Default::default()
 			}
 		);
@@ -53,32 +53,32 @@ fn create_contract_account_works() {
 	});
 }
 
-/// This test verifies that creating contract account fails when the account record already exists.
+/// This test verifies that creating evm managed account fails when the account record already exists.
 #[test]
-fn create_contract_account_fails() {
+fn create_evm_managed_account_fails() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
 		let mut account_info = AccountInfo::<_, _>::default();
-		account_info.has_code = true;
+		account_info.managed_by_evm = true;
 		<Account<Test>>::insert(account_id.clone(), account_info);
 
 		// Invoke the function under test.
 		assert_storage_noop!(assert_eq!(
-			EvmSystem::create_contract_account(&account_id),
+			EvmSystem::create_evm_managed_account(&account_id),
 			AccountCreationOutcome::AlreadyExists
 		));
 	});
 }
 
-/// This test verifies that removing contract account works in the happy path.
+/// This test verifies that removing evm managed account works in the happy path.
 #[test]
-fn remove_contract_account_works() {
+fn remove_evm_managed_account_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
 		let mut account_info = AccountInfo::<_, _>::default();
-		account_info.has_code = true;
+		account_info.managed_by_evm = true;
 		<Account<Test>>::insert(account_id.clone(), account_info);
 
 		// Set block number to enable events.
@@ -94,7 +94,7 @@ fn remove_contract_account_works() {
 
 		// Invoke the function under test.
 		assert_eq!(
-			EvmSystem::remove_contract_account(&account_id),
+			EvmSystem::remove_evm_managed_account(&account_id),
 			AccountRemovalOutcome::Reaped
 		);
 
@@ -109,16 +109,16 @@ fn remove_contract_account_works() {
 	});
 }
 
-/// This test verifies that removing contract account fails when the account doesn't exist.
+/// This test verifies that removing evm managed account fails when the account doesn't exist.
 #[test]
-fn remove_contract_account_code_fails_did_not_exist() {
+fn remove_evm_managed_account_fails_did_not_exist() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
 
 		// Invoke the function under test.
 		assert_storage_noop!(assert_eq!(
-			EvmSystem::remove_contract_account(&account_id),
+			EvmSystem::remove_evm_managed_account(&account_id),
 			AccountRemovalOutcome::DidNotExist
 		));
 	});
@@ -276,7 +276,7 @@ fn try_mutate_exists_account_updated() {
 }
 
 /// This test verifies that try_mutate_exists works as expected in case data was providing
-/// and returned data is `None`, account doesn't have code. As a result, the account has been removed.
+/// and returned data is `None`, account isn't managed by evm. As a result, the account has been removed.
 #[test]
 fn try_mutate_exists_not_contract_account_removed() {
 	new_test_ext().execute_with_ext(|_| {
@@ -317,14 +317,14 @@ fn try_mutate_exists_not_contract_account_removed() {
 }
 
 /// This test verifies that try_mutate_exists works as expected in case data was providing
-/// and returned data is `None`, account has code. As a result, the account has been retained.
+/// and returned data is `None`, account is managed by evm. As a result, the account has been retained.
 #[test]
 fn try_mutate_exists_contract_account_retained() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
 		let mut account_info = AccountInfo::<_, _>::default();
-		account_info.has_code = true;
+		account_info.managed_by_evm = true;
 		<Account<Test>>::insert(account_id.clone(), account_info);
 
 		// Check test preconditions.
@@ -342,7 +342,7 @@ fn try_mutate_exists_contract_account_retained() {
 		assert_eq!(
 			<Account<Test>>::get(&account_id),
 			AccountInfo {
-				has_code: true,
+				managed_by_evm: true,
 				..Default::default()
 			}
 		);
