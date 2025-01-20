@@ -178,9 +178,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Create a new record related to evm managed account.
-	pub fn create_evm_managed_account(
-		who: &<T as Config>::AccountId,
-	) -> AccountCreationOutcome {
+	pub fn create_evm_managed_account(who: &<T as Config>::AccountId) -> AccountCreationOutcome {
 		if Self::account_exists(who) {
 			Account::<T>::mutate(who, |account| account.managed_by_evm = true);
 			return AccountCreationOutcome::AlreadyExists;
@@ -202,7 +200,9 @@ impl<T: Config> Pallet<T> {
 
 		let account_info = Account::<T>::get(who);
 
-		if !account_info.managed_by_evm || account_info.data != <T as Config>::AccountData::default() {
+		if !account_info.managed_by_evm
+			|| account_info.data != <T as Config>::AccountData::default()
+		{
 			return AccountRemovalOutcome::Retained;
 		}
 
