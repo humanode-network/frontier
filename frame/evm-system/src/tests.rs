@@ -61,8 +61,14 @@ fn create_evm_managed_account_works_already_exists() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
-		let mut account_info = AccountInfo::<_, _>::default();
-		account_info.managed_by_evm = false;
+		let nonce = 10;
+		let data = 100;
+
+		let account_info = AccountInfo {
+			nonce,
+			managed_by_evm: false,
+			data,
+		};
 		<Account<Test>>::insert(account_id.clone(), account_info);
 
 		// Check test preconditions.
@@ -79,8 +85,9 @@ fn create_evm_managed_account_works_already_exists() {
 		assert_eq!(
 			<Account<Test>>::get(&account_id),
 			AccountInfo {
+				nonce,
 				managed_by_evm: true,
-				..Default::default()
+				data,
 			}
 		);
 	});
@@ -291,7 +298,16 @@ fn try_mutate_exists_account_updated() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
-		<Account<Test>>::insert(account_id.clone(), AccountInfo::<_, _>::default());
+		let nonce = 10;
+		let managed_by_evm = true;
+		let data = 100;
+
+		let account_info = AccountInfo {
+			nonce,
+			managed_by_evm,
+			data,
+		};
+		<Account<Test>>::insert(account_id.clone(), account_info);
 
 		// Check test preconditions.
 		assert!(EvmSystem::account_exists(&account_id));
@@ -313,8 +329,9 @@ fn try_mutate_exists_account_updated() {
 		assert_eq!(
 			<Account<Test>>::get(&account_id),
 			AccountInfo {
-				data: 1,
-				..Default::default()
+				nonce,
+				managed_by_evm,
+				data: data + 1,
 			}
 		);
 	});
@@ -368,8 +385,15 @@ fn try_mutate_exists_account_retained_managed_by_evm() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
-		let mut account_info = AccountInfo::<_, _>::default();
-		account_info.managed_by_evm = true;
+		let nonce = 10;
+		let managed_by_evm = true;
+		let data = 100;
+
+		let account_info = AccountInfo {
+			nonce,
+			managed_by_evm,
+			data,
+		};
 		<Account<Test>>::insert(account_id.clone(), account_info);
 
 		// Check test preconditions.
@@ -387,6 +411,7 @@ fn try_mutate_exists_account_retained_managed_by_evm() {
 		assert_eq!(
 			<Account<Test>>::get(&account_id),
 			AccountInfo {
+				nonce,
 				managed_by_evm: true,
 				..Default::default()
 			}
