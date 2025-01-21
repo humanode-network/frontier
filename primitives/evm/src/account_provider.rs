@@ -26,7 +26,7 @@ pub trait AccountProvider {
 	///
 	/// The account associated with new created address EVM.
 	fn create_evm_managed_account(who: &Self::AccountId);
-	/// Removes an evm managed account from accounts records.
+	/// Removes an EVM-managed account from accounts records, or unmarks the account as managed by EVM.
 	///
 	/// The account associated with removed address from EVM.
 	fn remove_evm_managed_account(who: &Self::AccountId);
