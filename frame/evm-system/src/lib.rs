@@ -200,9 +200,13 @@ impl<T: Config> Pallet<T> {
 
 		let account_info = Account::<T>::get(who);
 
-		if !account_info.managed_by_evm
-			|| account_info.data != <T as Config>::AccountData::default()
+		if !account_info.managed_by_evm {
+			return AccountRemovalOutcome::Retained;
+		}
+
+		if account_info.data != <T as Config>::AccountData::default()
 		{
+			Account::<T>::mutate(who, |account| account.managed_by_evm = false);
 			return AccountRemovalOutcome::Retained;
 		}
 
