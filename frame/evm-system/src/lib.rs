@@ -201,8 +201,7 @@ impl<T: Config> Pallet<T> {
 			return AccountRemovalOutcome::Retained;
 		}
 
-		if account_info.data != <T as Config>::AccountData::default()
-		{
+		if account_info.data != <T as Config>::AccountData::default() {
 			Account::<T>::mutate(who, |account| account.managed_by_evm = false);
 			return AccountRemovalOutcome::Retained;
 		}
