@@ -10,6 +10,8 @@ use scale_codec::{Decode, Encode, FullCodec, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_runtime::{traits::One, DispatchError, RuntimeDebug};
 
+pub mod migrations;
+
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
