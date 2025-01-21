@@ -44,23 +44,20 @@ impl<EP: EvmProvider<<T as Config>::AccountId>, T: Config> OnRuntimeUpgrade
 
 		info!("{}: Running migration to v1", pallet_name);
 
-		<Account<T>>::translate(
-			|account_id,
-			 old_account_info: CurrentAccountInfo<
-				<T as Config>::Index,
-				<T as Config>::AccountData,
-			>| {
-				let managed_by_evm = EP::is_managed_by_evm(&account_id);
-				let account_info = AccountInfo::<_, _> {
-					nonce: old_account_info.nonce,
-					managed_by_evm,
-					data: old_account_info.data,
-				};
+		<Account<T>>::translate::<
+			CurrentAccountInfo<<T as Config>::Index, <T as Config>::AccountData>,
+			_,
+		>(|account_id, old_account_info| {
+			let managed_by_evm = EP::is_managed_by_evm(&account_id);
+			let account_info = AccountInfo::<_, _> {
+				nonce: old_account_info.nonce,
+				managed_by_evm,
+				data: old_account_info.data,
+			};
 
-				weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 1));
-				Some(account_info)
-			},
-		);
+			weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 1));
+			Some(account_info)
+		});
 
 		// Set storage version to `1`.
 		StorageVersion::new(1).put::<Pallet<T>>();
