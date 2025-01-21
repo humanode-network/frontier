@@ -186,6 +186,7 @@ fn remove_evm_managed_account_fails_some_account_data() {
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
 		let mut account_info = AccountInfo::<_, _>::default();
 		account_info.data = 10;
+		account_info.managed_by_evm = true;
 		<Account<Test>>::insert(account_id.clone(), account_info);
 
 		// Invoke the function under test.
