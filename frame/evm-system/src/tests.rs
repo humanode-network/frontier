@@ -184,7 +184,7 @@ fn remove_evm_managed_account_fails_not_managed_by_evm() {
 	});
 }
 
-/// This test verifies that removing contract account fails when the account record
+/// This test verifies that removing EVM-managed account fails when the account record
 /// contains some account data.
 #[test]
 fn remove_evm_managed_account_fails_some_account_data() {
