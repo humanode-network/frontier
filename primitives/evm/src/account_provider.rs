@@ -22,7 +22,7 @@ pub trait AccountProvider {
 	/// for particular account.
 	type Index: AtLeast32Bit;
 
-	/// Creates an evm managed account in accounts records.
+	/// Creates an EVM-managed account in accounts records.
 	///
 	/// The account associated with new created address EVM.
 	fn create_evm_managed_account(who: &Self::AccountId);
