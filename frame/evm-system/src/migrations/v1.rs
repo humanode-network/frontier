@@ -77,8 +77,8 @@ impl<EP: EvmProvider<<T as Config>::AccountId>, T: Config> OnRuntimeUpgrade
 			return Ok(vec![]);
 		}
 
-		let pre_count = Account::<T>::iter().count();
-		Ok((pre_count as u32).encode())
+		let pre_count: u64 = Account::<T>::iter().count().try_into().unwrap();
+		Ok(pre_count.encode())
 	}
 
 	#[cfg(feature = "try-runtime")]
@@ -93,8 +93,8 @@ impl<EP: EvmProvider<<T as Config>::AccountId>, T: Config> OnRuntimeUpgrade
 		assert_eq!(onchain, 1);
 
 		// Ensure the accounts count matches.
-		let pre_count: u32 = scale_codec::Decode::decode(&mut &*state).unwrap();
-		let post_count: u32 = Account::<T>::iter().count().try_into().unwrap();
+		let pre_count: u64 = scale_codec::Decode::decode(&mut &*state).unwrap();
+		let post_count: u64 = Account::<T>::iter().count().try_into().unwrap();
 		assert_eq!(pre_count, post_count);
 
 		Ok(())
