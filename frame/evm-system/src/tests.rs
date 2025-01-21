@@ -191,16 +191,32 @@ fn remove_evm_managed_account_fails_some_account_data() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
-		let mut account_info = AccountInfo::<_, _>::default();
-		account_info.data = 10;
-		account_info.managed_by_evm = true;
+		let nonce = 10;
+		let data = 100;
+
+		let account_info = AccountInfo {
+			nonce,
+			managed_by_evm: true,
+			data,
+		};
 		<Account<Test>>::insert(account_id.clone(), account_info);
 
 		// Invoke the function under test.
-		assert_storage_noop!(assert_eq!(
+		assert_eq!(
 			EvmSystem::remove_evm_managed_account(&account_id),
 			AccountRemovalOutcome::Retained
-		));
+		);
+
+		// Assert state changes.
+		assert!(EvmSystem::account_exists(&account_id));
+		assert_eq!(
+			<Account<Test>>::get(&account_id),
+			AccountInfo {
+				nonce,
+				managed_by_evm: false,
+				data,
+			}
+		);
 	});
 }
 
