@@ -17,7 +17,7 @@ pub struct CurrentAccountInfo<Index, AccountData> {
 /// EVM provider interface.
 pub trait EvmProvider<AccountId> {
 	/// Check whether account is managed by EVM or not.
-	fn is_managed_by_evm(account_id: AccountId) -> bool;
+	fn is_managed_by_evm(account_id: &AccountId) -> bool;
 }
 
 /// Execute migration to Version 1 from Version 0.
@@ -48,7 +48,7 @@ impl<EP: EvmProvider<<T as Config>::AccountId>, T: Config> OnRuntimeUpgrade
 				<T as Config>::Index,
 				<T as Config>::AccountData,
 			>| {
-				let managed_by_evm = EP::is_managed_by_evm(account_id);
+				let managed_by_evm = EP::is_managed_by_evm(&account_id);
 				let account_info = AccountInfo::<_, _> {
 					nonce: old_account_info.nonce,
 					managed_by_evm,
