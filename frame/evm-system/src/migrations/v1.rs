@@ -71,11 +71,33 @@ impl<EP: EvmProvider<<T as Config>::AccountId>, T: Config> OnRuntimeUpgrade
 
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
-		todo!()
+		let onchain = <Pallet<T>>::on_chain_storage_version();
+
+		// Disable the check for newer versions by returning an empty state.
+		if onchain >= 1 {
+			return Ok(vec![]);
+		}
+
+		let pre_count = Account::<T>::iter().count();
+		Ok((pre_count as u32).encode())
 	}
 
 	#[cfg(feature = "try-runtime")]
-	fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
-		todo!()
+	fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
+		// Empty state means that the check is disabled.
+		if state.is_empty() {
+			return Ok(());
+		}
+
+		// Ensure version is updated correctly.
+		let onchain = <Pallet<T>>::on_chain_storage_version();
+		assert_eq!(onchain, 1);
+
+		// Ensure the accounts count matches.
+		let pre_count: u32 = scale_codec::Decode::decode(&mut &*state).unwrap();
+		let post_count: u32 = Account::<T>::iter().count().try_into().unwrap();
+		assert_eq!(pre_count, post_count);
+
+		Ok(())
 	}
 }
