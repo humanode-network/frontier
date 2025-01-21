@@ -423,14 +423,14 @@ fn try_mutate_exists_account_not_created() {
 		System::set_block_number(1);
 
 		// Invoke the function under test.
-		<Account<Test>>::try_mutate_exists(account_id, |maybe_data| -> Result<(), ()> {
-			*maybe_data = None;
-			Ok(())
-		})
-		.unwrap();
-
-		// Assert state changes.
-		assert!(!EvmSystem::account_exists(&account_id));
+		assert_storage_noop!(<Account<Test>>::try_mutate_exists(
+			account_id,
+			|maybe_data| -> Result<(), ()> {
+				*maybe_data = None;
+				Ok(())
+			}
+		)
+		.unwrap());
 	});
 }
 
@@ -453,13 +453,6 @@ fn try_mutate_exists_fails_without_changes() {
 				Err(())
 			}),
 			()
-		);
-
-		// Assert state changes.
-		assert!(EvmSystem::account_exists(&account_id));
-		assert_eq!(
-			<Account<Test>>::get(&account_id),
-			AccountInfo::<_, _>::default()
 		);
 	});
 }
