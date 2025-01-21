@@ -8,9 +8,10 @@ use sp_core::H160;
 
 use crate::{mock::*, *};
 
-/// This test verifies that creating EVM-managed account works in the happy path.
+/// This test verifies that creating EVM-managed account works in the happy path
+/// in case a new account should be created.
 #[test]
-fn create_evm_managed_account_works() {
+fn create_evm_managed_account_works_created() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
@@ -53,7 +54,40 @@ fn create_evm_managed_account_works() {
 	});
 }
 
-/// This test verifies that creating EVM-managed account fails when the account already exists.
+/// This test verifies that creating EVM-managed account works in the happy path
+/// in case account already exists but it's not managed by EVM.
+#[test]
+fn create_evm_managed_account_works_already_exists() {
+	new_test_ext().execute_with_ext(|_| {
+		// Prepare test data.
+		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
+		let mut account_info = AccountInfo::<_, _>::default();
+		account_info.managed_by_evm = false;
+		<Account<Test>>::insert(account_id.clone(), account_info);
+
+		// Check test preconditions.
+		assert!(EvmSystem::account_exists(&account_id));
+
+		// Invoke the function under test.
+		assert_eq!(
+			EvmSystem::create_evm_managed_account(&account_id),
+			AccountCreationOutcome::AlreadyExists
+		);
+
+		// Assert state changes.
+		assert!(EvmSystem::account_exists(&account_id));
+		assert_eq!(
+			<Account<Test>>::get(&account_id),
+			AccountInfo {
+				managed_by_evm: true,
+				..Default::default()
+			}
+		);
+	});
+}
+
+/// This test verifies that creating EVM-managed account fails when the account already exists
+/// and managed by EVM.
 #[test]
 fn create_evm_managed_account_fails_already_exists() {
 	new_test_ext().execute_with_ext(|_| {
