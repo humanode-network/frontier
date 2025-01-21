@@ -21,22 +21,26 @@ pub trait EvmProvider<AccountId> {
 }
 
 /// Execute migration to Version 1 from Version 0.
-pub struct MigrationV0ToV1<T, EP>(sp_std::marker::PhantomData<(T, EP)>);
+pub struct MigrationV0ToV1<EP, T>(sp_std::marker::PhantomData<(EP, T)>);
 
-impl<T: Config, EP: EvmProvider<<T as Config>::AccountId>> OnRuntimeUpgrade
-	for MigrationV0ToV1<T, EP>
+impl<EP: EvmProvider<<T as Config>::AccountId>, T: Config> OnRuntimeUpgrade
+	for MigrationV0ToV1<EP, T>
 {
 	fn on_runtime_upgrade() -> Weight {
 		let onchain_version = Pallet::<T>::on_chain_storage_version();
+		let pallet_name = Pallet::<T>::name();
 
 		let mut weight: Weight = T::DbWeight::get().reads(1);
 
 		if onchain_version != 0 {
-			info!("Not at version 0, nothing to do. This migrarion probably should be removed");
+			info!(
+				"{}: Not at version 0, nothing to do. This migrarion probably should be removed",
+				pallet_name,
+			);
 			return weight;
 		}
 
-		info!("Running migration to v1");
+		info!("{}: Running migration to v1", pallet_name);
 
 		<Account<T>>::translate(
 			|account_id,
@@ -60,7 +64,7 @@ impl<T: Config, EP: EvmProvider<<T as Config>::AccountId>> OnRuntimeUpgrade
 		StorageVersion::new(1).put::<Pallet<T>>();
 		weight.saturating_accrue(T::DbWeight::get().writes(1));
 
-		info!("Migrated to v1");
+		info!("{}: Migrated to v1", pallet_name);
 
 		weight
 	}
