@@ -177,7 +177,7 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	/// Create a new record related to evm managed account.
+	/// Create a new record related to EVM-managed account.
 	pub fn create_evm_managed_account(who: &<T as Config>::AccountId) -> AccountCreationOutcome {
 		if Self::account_exists(who) {
 			Account::<T>::mutate(who, |account| account.managed_by_evm = true);
@@ -192,7 +192,7 @@ impl<T: Config> Pallet<T> {
 		AccountCreationOutcome::Created
 	}
 
-	/// Remove an existed record related to evm managed account.
+	/// Remove an existed record related to EVM-managed account.
 	pub fn remove_evm_managed_account(who: &<T as Config>::AccountId) -> AccountRemovalOutcome {
 		if !Self::account_exists(who) {
 			return AccountRemovalOutcome::DidNotExist;
