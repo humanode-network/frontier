@@ -8,10 +8,10 @@ use sp_core::H160;
 
 use crate::{mock::*, *};
 
-/// This test verifies that creating EVM-managed account works in the happy path
+/// This test verifies that creating EVM-managed account works as expected
 /// in case a new account should be created.
 #[test]
-fn create_evm_managed_account_works_created() {
+fn create_evm_managed_account_created() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
@@ -54,10 +54,10 @@ fn create_evm_managed_account_works_created() {
 	});
 }
 
-/// This test verifies that creating EVM-managed account works in the happy path
+/// This test verifies that creating EVM-managed account works as expected
 /// in case account already exists but it's not managed by EVM.
 #[test]
-fn create_evm_managed_account_works_already_exists() {
+fn create_evm_managed_account_not_managed_by_evm_already_exists() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
@@ -93,10 +93,10 @@ fn create_evm_managed_account_works_already_exists() {
 	});
 }
 
-/// This test verifies that creating EVM-managed account fails when the account already exists
-/// and managed by EVM.
+/// This test verifies that creating EVM-managed account works as expected
+/// when the account already exists and managed by EVM.
 #[test]
-fn create_evm_managed_account_fails_already_exists() {
+fn create_evm_managed_account_managed_by_evm_already_exists() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
@@ -112,9 +112,9 @@ fn create_evm_managed_account_fails_already_exists() {
 	});
 }
 
-/// This test verifies that removing EVM-managed account works in the happy path.
+/// This test verifies that removing EVM-managed account works as expected.
 #[test]
-fn remove_evm_managed_account_works() {
+fn remove_evm_managed_account_reaped() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
@@ -150,9 +150,10 @@ fn remove_evm_managed_account_works() {
 	});
 }
 
-/// This test verifies that removing EVM-managed account fails when the account doesn't exist.
+/// This test verifies that removing EVM-managed account works as expected
+/// when the account doesn't exist.
 #[test]
-fn remove_evm_managed_account_fails_did_not_exist() {
+fn remove_evm_managed_account_did_not_exist() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
@@ -165,10 +166,10 @@ fn remove_evm_managed_account_fails_did_not_exist() {
 	});
 }
 
-/// This test verifies that removing EVM-managed account fails when the account record
-/// is not managed by EVM.
+/// This test verifies that removing EVM-managed account works as expected
+/// when the account record is not managed by EVM.
 #[test]
-fn remove_evm_managed_account_fails_not_managed_by_evm() {
+fn remove_evm_managed_account_not_managed_by_evm_retained() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
@@ -184,10 +185,10 @@ fn remove_evm_managed_account_fails_not_managed_by_evm() {
 	});
 }
 
-/// This test verifies that removing EVM-managed account fails when the account record
-/// contains some account data.
+/// This test verifies that removing EVM-managed account works as expected
+/// when the account record contains some account data.
 #[test]
-fn remove_evm_managed_account_fails_some_account_data() {
+fn remove_evm_managed_account_some_account_data_retained() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
@@ -356,7 +357,7 @@ fn try_mutate_exists_account_updated() {
 /// This test verifies that try_mutate_exists works as expected in case data was providing
 /// and returned data is `None`, account isn't managed by EVM. As a result, the account has been removed.
 #[test]
-fn try_mutate_exists_account_removed_not_managed_by_evm() {
+fn try_mutate_exists_account_not_managed_by_evm_removed() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
@@ -397,7 +398,7 @@ fn try_mutate_exists_account_removed_not_managed_by_evm() {
 /// This test verifies that try_mutate_exists works as expected in case data was providing
 /// and returned data is `None`, account is managed by evm. As a result, the account has been retained.
 #[test]
-fn try_mutate_exists_account_retained_managed_by_evm() {
+fn try_mutate_exists_account_managed_by_evm_retained() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
@@ -464,7 +465,7 @@ fn try_mutate_exists_account_not_created() {
 /// This test verifies that try_mutate_exists works as expected in case getting error
 /// during data mutation.
 #[test]
-fn try_mutate_exists_fails_without_changes() {
+fn try_mutate_exists_without_changes() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
