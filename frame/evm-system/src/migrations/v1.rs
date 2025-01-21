@@ -1,5 +1,7 @@
 //! Migration to Version 1.
 
+#[cfg(feature = "try-runtime")]
+use frame_support::sp_std::{vec, vec::Vec};
 use frame_support::{log::info, pallet_prelude::*, traits::OnRuntimeUpgrade};
 
 use crate::{Account, AccountInfo, Config, Pallet};
