@@ -2,12 +2,12 @@
 
 #[cfg(feature = "try-runtime")]
 use frame_support::sp_std::{vec, vec::Vec};
-use frame_support::{log::info, pallet_prelude::*, traits::OnRuntimeUpgrade};
+use frame_support::{log::info, pallet_prelude::*, storage_alias, traits::OnRuntimeUpgrade};
 
 use crate::{Account, AccountInfo, Config, Pallet};
 
 /// The Version 0 account info struct.
-#[derive(Decode)]
+#[derive(Default, Decode, Encode)]
 pub struct CurrentAccountInfo<Index, AccountData> {
 	/// The number of transactions this account has sent.
 	pub nonce: Index,
@@ -70,6 +70,16 @@ impl<EP: EvmProvider<<T as Config>::AccountId>, T: Config> OnRuntimeUpgrade
 
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
+		/// The Version 0 account storage.
+		#[storage_alias]
+		type Account<T: Config> = StorageMap<
+			Pallet<T>,
+			Blake2_128Concat,
+			<T as Config>::AccountId,
+			CurrentAccountInfo<<T as Config>::Index, <T as Config>::AccountData>,
+			ValueQuery,
+		>;
+
 		let onchain = <Pallet<T>>::on_chain_storage_version();
 
 		// Disable the check for newer versions by returning an empty state.
@@ -77,7 +87,8 @@ impl<EP: EvmProvider<<T as Config>::AccountId>, T: Config> OnRuntimeUpgrade
 			return Ok(vec![]);
 		}
 
-		let pre_count: u64 = Account::<T>::iter().count().try_into().unwrap();
+		let pre_count: u64 = <Account<T>>::iter().count().try_into().unwrap();
+
 		Ok(pre_count.encode())
 	}
 
