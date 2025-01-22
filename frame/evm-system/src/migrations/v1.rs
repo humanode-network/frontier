@@ -108,6 +108,14 @@ impl<EP: EvmProvider<<T as Config>::AccountId>, T: Config> OnRuntimeUpgrade
 		let post_count: u64 = Account::<T>::iter().count().try_into().unwrap();
 		assert_eq!(pre_count, post_count);
 
+		// Ensure storage data is updated correctly.
+		Account::<T>::iter().for_each(|(_account_id, account_info)| {
+			assert!(
+				account_info.managed_by_evm == true || account_info.managed_by_evm == false,
+				"none of accounts should be in destroying status, or undefined state"
+			)
+		});
+
 		Ok(())
 	}
 }
