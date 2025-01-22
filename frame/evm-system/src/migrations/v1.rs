@@ -8,7 +8,7 @@ use crate::{Account, AccountInfo, Config, Pallet};
 
 /// The Version 0 account info struct.
 #[derive(Default, Decode, Encode)]
-pub struct CurrentAccountInfo<Index, AccountData> {
+pub struct AccountInfoV0<Index, AccountData> {
 	/// The number of transactions this account has sent.
 	pub nonce: Index,
 	/// The additional data that belongs to this account. Used to store the balance(s) in a lot of
@@ -44,20 +44,19 @@ impl<EP: EvmProvider<<T as Config>::AccountId>, T: Config> OnRuntimeUpgrade
 
 		info!("{}: Running migration to v1", pallet_name);
 
-		<Account<T>>::translate::<
-			CurrentAccountInfo<<T as Config>::Index, <T as Config>::AccountData>,
-			_,
-		>(|account_id, old_account_info| {
-			let managed_by_evm = EP::is_managed_by_evm(&account_id);
-			let account_info = AccountInfo::<_, _> {
-				nonce: old_account_info.nonce,
-				managed_by_evm,
-				data: old_account_info.data,
-			};
+		<Account<T>>::translate::<AccountInfoV0<<T as Config>::Index, <T as Config>::AccountData>, _>(
+			|account_id, old_account_info| {
+				let managed_by_evm = EP::is_managed_by_evm(&account_id);
+				let account_info = AccountInfo::<_, _> {
+					nonce: old_account_info.nonce,
+					managed_by_evm,
+					data: old_account_info.data,
+				};
 
-			weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 1));
-			Some(account_info)
-		});
+				weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 1));
+				Some(account_info)
+			},
+		);
 
 		// Set storage version to `1`.
 		StorageVersion::new(1).put::<Pallet<T>>();
@@ -76,7 +75,7 @@ impl<EP: EvmProvider<<T as Config>::AccountId>, T: Config> OnRuntimeUpgrade
 			Pallet<T>,
 			Blake2_128Concat,
 			<T as Config>::AccountId,
-			CurrentAccountInfo<<T as Config>::Index, <T as Config>::AccountData>,
+			AccountInfoV0<<T as Config>::Index, <T as Config>::AccountData>,
 			ValueQuery,
 		>;
 
