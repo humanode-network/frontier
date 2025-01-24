@@ -167,6 +167,7 @@ impl<T: Config> Pallet<T> {
 
 			// Meaning that account is being created.
 			if a.nonce == <T as Config>::Index::one()
+				&& !a.managed_by_evm
 				&& a.data == <T as Config>::AccountData::default()
 			{
 				Self::on_created_account(who.clone());
