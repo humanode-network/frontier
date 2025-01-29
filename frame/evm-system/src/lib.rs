@@ -5,10 +5,12 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::traits::StoredMap;
+use frame_support::traits::{StorageVersion, StoredMap};
 use scale_codec::{Decode, Encode, FullCodec, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_runtime::{traits::One, DispatchError, RuntimeDebug};
+
+pub mod migrations;
 
 #[cfg(test)]
 mod mock;
@@ -16,6 +18,9 @@ mod mock;
 mod tests;
 
 pub use pallet::*;
+
+/// The current storage version.
+const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
 /// Account information.
 #[derive(
@@ -47,6 +52,7 @@ pub mod pallet {
 	use sp_std::fmt::Debug;
 
 	#[pallet::pallet]
+	#[pallet::storage_version(STORAGE_VERSION)]
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(PhantomData<T>);
 
