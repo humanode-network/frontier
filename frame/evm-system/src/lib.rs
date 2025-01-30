@@ -180,43 +180,6 @@ impl<T: Config> Pallet<T> {
 			}
 		});
 	}
-
-	/// Create a new record related to EVM-managed account.
-	pub fn create_evm_managed_account(who: &<T as Config>::AccountId) -> AccountCreationOutcome {
-		if Self::account_exists(who) {
-			Account::<T>::mutate(who, |account| account.managed_by_evm = true);
-			return AccountCreationOutcome::AlreadyExists;
-		}
-
-		let mut account_info = AccountInfo::<_, _>::default();
-		account_info.managed_by_evm = true;
-
-		Account::<T>::insert(who.clone(), account_info);
-		Self::on_created_account(who.clone());
-		AccountCreationOutcome::Created
-	}
-
-	/// Remove an existed record related to EVM-managed account.
-	pub fn remove_evm_managed_account(who: &<T as Config>::AccountId) -> AccountRemovalOutcome {
-		if !Self::account_exists(who) {
-			return AccountRemovalOutcome::DidNotExist;
-		}
-
-		let account_info = Account::<T>::get(who);
-
-		if !account_info.managed_by_evm {
-			return AccountRemovalOutcome::Retained;
-		}
-
-		if account_info.data != <T as Config>::AccountData::default() {
-			Account::<T>::mutate(who, |account| account.managed_by_evm = false);
-			return AccountRemovalOutcome::Retained;
-		}
-
-		Account::<T>::remove(who);
-		Self::on_killed_account(who.clone());
-		AccountRemovalOutcome::Reaped
-	}
 }
 
 impl<T: Config> StoredMap<<T as Config>::AccountId, <T as Config>::AccountData> for Pallet<T> {
@@ -266,12 +229,12 @@ impl<T: Config> fp_evm::AccountProvider for Pallet<T> {
 	type AccountId = <T as Config>::AccountId;
 	type Index = <T as Config>::Index;
 
-	fn create_evm_managed_account(who: &Self::AccountId) {
-		let _ = Self::create_evm_managed_account(who);
+	fn create_account(who: &Self::AccountId) {
+		// Do nothing.
 	}
 
-	fn remove_evm_managed_account(who: &Self::AccountId) {
-		let _ = Self::remove_evm_managed_account(who);
+	fn on_account_mark_deleted(who: &Self::AccountId) {
+		// Do nothing.
 	}
 
 	fn account_nonce(who: &Self::AccountId) -> Self::Index {

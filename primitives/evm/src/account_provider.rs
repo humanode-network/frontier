@@ -22,14 +22,14 @@ pub trait AccountProvider {
 	/// for particular account.
 	type Index: AtLeast32Bit;
 
-	/// Creates an EVM-managed account in accounts records, or marks the account as managed by EVM.
+	/// Creates a new account in accounts records.
 	///
 	/// The account associated with new created address EVM.
-	fn create_evm_managed_account(who: &Self::AccountId);
-	/// Removes an EVM-managed account from accounts records, or unmarks the account as managed by EVM.
+	fn create_account(who: &Self::AccountId);
+	/// A hook on account marked as deleted in EVM called by selfdestruct opcode.
 	///
-	/// The account associated with removed address from EVM.
-	fn remove_evm_managed_account(who: &Self::AccountId);
+	/// The account associated with marked as deleted address in EVM.
+	fn on_account_mark_deleted(who: &Self::AccountId);
 	/// Return current account nonce value.
 	///
 	/// Used to represent account basic information in EVM format.
