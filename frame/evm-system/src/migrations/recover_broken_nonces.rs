@@ -19,10 +19,14 @@ impl<EP: EvmProvider<<T as Config>::AccountId>, T: Config> OnRuntimeUpgrade
 	for MigrationBrokenNoncesRecover<EP, T>
 {
 	fn on_runtime_upgrade() -> Weight {
+		let pallet_name = Pallet::<T>::name();
+
 		info!("{}: Running migration to recover broken nonces", pallet_name);
 
+		let mut weight: Weight = T::DbWeight::get().reads(1);
+
 		// TODO: implement a logic to recover broken nonces.
-		todo!()
+		todo!();
 
 		info!("{}: Migrated", pallet_name);
 
@@ -32,12 +36,12 @@ impl<EP: EvmProvider<<T as Config>::AccountId>, T: Config> OnRuntimeUpgrade
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
 		// TODO: some checks before migration.
-		todo!()
+		todo!();
 	}
 
 	#[cfg(feature = "try-runtime")]
 	fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
 		// TODO: some checks after migration.
-		todo!()
+		todo!();
 	}
 }
