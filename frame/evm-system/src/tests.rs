@@ -8,10 +8,10 @@ use sp_core::H160;
 
 use crate::{mock::*, *};
 
-/// This test verifies that creating EVM-managed account works as expected
+/// This test verifies that creating an account works as expected
 /// in case a new account should be created.
 #[test]
-fn create_evm_managed_account_created() {
+fn create_account_created() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
@@ -32,7 +32,7 @@ fn create_evm_managed_account_created() {
 
 		// Invoke the function under test.
 		assert_eq!(
-			EvmSystem::create_evm_managed_account(&account_id),
+			EvmSystem::create_account(&account_id),
 			AccountCreationOutcome::Created
 		);
 
@@ -40,10 +40,7 @@ fn create_evm_managed_account_created() {
 		assert!(EvmSystem::account_exists(&account_id));
 		assert_eq!(
 			<Account<Test>>::get(&account_id),
-			AccountInfo {
-				managed_by_evm: true,
-				..Default::default()
-			}
+			AccountInfo::<_, _>::default()
 		);
 		System::assert_has_event(RuntimeEvent::EvmSystem(Event::NewAccount {
 			account: account_id,
@@ -54,114 +51,19 @@ fn create_evm_managed_account_created() {
 	});
 }
 
-/// This test verifies that creating EVM-managed account works as expected
-/// in case account already exists but it's not managed by EVM.
+/// This test verifies that creating an account works as expected
+/// when the account already exists.
 #[test]
-fn create_evm_managed_account_not_managed_by_evm_already_exists() {
+fn create_account_already_exists() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
-		let nonce = 10;
-		let data = 100;
-
-		let account_info = AccountInfo {
-			nonce,
-			managed_by_evm: false,
-			data,
-		};
-		<Account<Test>>::insert(account_id.clone(), account_info);
-
-		// Check test preconditions.
-		assert!(EvmSystem::account_exists(&account_id));
-
-		// Invoke the function under test.
-		assert_eq!(
-			EvmSystem::create_evm_managed_account(&account_id),
-			AccountCreationOutcome::AlreadyExists
-		);
-
-		// Assert state changes.
-		assert!(EvmSystem::account_exists(&account_id));
-		assert_eq!(
-			<Account<Test>>::get(&account_id),
-			AccountInfo {
-				nonce,
-				managed_by_evm: true,
-				data,
-			}
-		);
-	});
-}
-
-/// This test verifies that creating EVM-managed account works as expected
-/// when the account already exists and managed by EVM.
-#[test]
-fn create_evm_managed_account_managed_by_evm_already_exists() {
-	new_test_ext().execute_with_ext(|_| {
-		// Prepare test data.
-		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
-		let mut account_info = AccountInfo::<_, _>::default();
-		account_info.managed_by_evm = true;
-		<Account<Test>>::insert(account_id.clone(), account_info);
+		<Account<Test>>::insert(account_id.clone(), AccountInfo::<_, _>::default());
 
 		// Invoke the function under test.
 		assert_storage_noop!(assert_eq!(
-			EvmSystem::create_evm_managed_account(&account_id),
+			EvmSystem::create_account(&account_id),
 			AccountCreationOutcome::AlreadyExists
-		));
-	});
-}
-
-/// This test verifies that removing EVM-managed account works as expected.
-#[test]
-fn remove_evm_managed_account_reaped() {
-	new_test_ext().execute_with_ext(|_| {
-		// Prepare test data.
-		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
-		let mut account_info = AccountInfo::<_, _>::default();
-		account_info.managed_by_evm = true;
-		<Account<Test>>::insert(account_id.clone(), account_info);
-
-		// Set block number to enable events.
-		System::set_block_number(1);
-
-		// Set mock expectations.
-		let on_killed_account_ctx = MockDummyOnKilledAccount::on_killed_account_context();
-		on_killed_account_ctx
-			.expect()
-			.once()
-			.with(predicate::eq(account_id))
-			.return_const(());
-
-		// Invoke the function under test.
-		assert_eq!(
-			EvmSystem::remove_evm_managed_account(&account_id),
-			AccountRemovalOutcome::Reaped
-		);
-
-		// Assert state changes.
-		assert!(!EvmSystem::account_exists(&account_id));
-		System::assert_has_event(RuntimeEvent::EvmSystem(Event::KilledAccount {
-			account: account_id,
-		}));
-
-		// Assert mock invocations.
-		on_killed_account_ctx.checkpoint();
-	});
-}
-
-/// This test verifies that removing EVM-managed account works as expected
-/// when the account doesn't exist.
-#[test]
-fn remove_evm_managed_account_did_not_exist() {
-	new_test_ext().execute_with_ext(|_| {
-		// Prepare test data.
-		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
-
-		// Invoke the function under test.
-		assert_storage_noop!(assert_eq!(
-			EvmSystem::remove_evm_managed_account(&account_id),
-			AccountRemovalOutcome::DidNotExist
 		));
 	});
 }
@@ -289,12 +191,10 @@ fn try_mutate_exists_account_updated() {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
 		let nonce = 10;
-		let managed_by_evm = true;
 		let data = 100;
 
 		let account_info = AccountInfo {
 			nonce,
-			managed_by_evm,
 			data,
 		};
 		<Account<Test>>::insert(account_id.clone(), account_info);
@@ -320,7 +220,6 @@ fn try_mutate_exists_account_updated() {
 			<Account<Test>>::get(&account_id),
 			AccountInfo {
 				nonce,
-				managed_by_evm,
 				data: data + 1,
 			}
 		);
@@ -328,9 +227,9 @@ fn try_mutate_exists_account_updated() {
 }
 
 /// This test verifies that try_mutate_exists works as expected in case data was providing
-/// and returned data is `None`, account isn't managed by EVM. As a result, the account has been removed.
+/// and returned data is `None`, account has zero nonce. As a result, the account has been removed.
 #[test]
-fn try_mutate_exists_account_not_managed_by_evm_removed() {
+fn try_mutate_exists_account_removed() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
@@ -369,19 +268,17 @@ fn try_mutate_exists_account_not_managed_by_evm_removed() {
 }
 
 /// This test verifies that try_mutate_exists works as expected in case data was providing
-/// and returned data is `None`, account is managed by evm. As a result, the account has been retained.
+/// and returned data is `None`, account has non zero nonce. As a result, the account has been retained.
 #[test]
-fn try_mutate_exists_account_managed_by_evm_retained() {
+fn try_mutate_exists_account_retained() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
 		let nonce = 10;
-		let managed_by_evm = true;
 		let data = 100;
 
 		let account_info = AccountInfo {
 			nonce,
-			managed_by_evm,
 			data,
 		};
 		<Account<Test>>::insert(account_id.clone(), account_info);
@@ -402,7 +299,6 @@ fn try_mutate_exists_account_managed_by_evm_retained() {
 			<Account<Test>>::get(&account_id),
 			AccountInfo {
 				nonce,
-				managed_by_evm: true,
 				..Default::default()
 			}
 		);
