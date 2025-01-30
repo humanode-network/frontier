@@ -6,16 +6,6 @@ use frame_support::{log::info, pallet_prelude::*, storage_alias, traits::OnRunti
 
 use crate::{Account, AccountInfo, Config, Pallet};
 
-/// The Version 0 account info struct.
-#[derive(Default, Decode, Encode)]
-pub struct AccountInfoV0<Index, AccountData> {
-	/// The number of transactions this account has sent.
-	pub nonce: Index,
-	/// The additional data that belongs to this account. Used to store the balance(s) in a lot of
-	/// chains.
-	pub data: AccountData,
-}
-
 /// EVM provider interface.
 pub trait EvmProvider<AccountId> {
 	/// Check whether account is managed by EVM or not.
