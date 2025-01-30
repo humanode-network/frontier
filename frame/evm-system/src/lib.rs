@@ -132,17 +132,6 @@ pub enum AccountCreationOutcome {
 	AlreadyExists,
 }
 
-/// The outcome of the account removal operation.
-#[derive(Eq, PartialEq, RuntimeDebug)]
-pub enum AccountRemovalOutcome {
-	/// Account was destroyed and no longer exists.
-	Reaped,
-	/// Account was non-empty, and it was retained and still exists in the system.
-	Retained,
-	/// Account did not exist in the first place, so no action was taken.
-	DidNotExist,
-}
-
 impl<T: Config> Pallet<T> {
 	/// Check the account existence.
 	pub fn account_exists(who: &<T as Config>::AccountId) -> bool {
@@ -175,21 +164,6 @@ impl<T: Config> Pallet<T> {
 		Account::<T>::insert(who.clone(), AccountInfo::<_, _>::default());
 		Self::on_created_account(who.clone());
 		AccountCreationOutcome::Created
-	}
-
-	/// Remove an account.
-	pub fn remove_account(who: &<T as Config>::AccountId) -> AccountRemovalOutcome {
-		if !Self::account_exists(who) {
-			return AccountRemovalOutcome::DidNotExist;
-		}
-
-		if Account::<T>::get(who).data != <T as Config>::AccountData::default() {
-			return AccountRemovalOutcome::Retained;
-		}
-
-		Account::<T>::remove(who);
-		Self::on_killed_account(who.clone());
-		AccountRemovalOutcome::Reaped
 	}
 
 	/// Increment a particular account's nonce by 1.
