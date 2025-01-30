@@ -165,10 +165,7 @@ fn try_mutate_exists_account_updated() {
 		let nonce = 10;
 		let data = 100;
 
-		let account_info = AccountInfo {
-			nonce,
-			data,
-		};
+		let account_info = AccountInfo { nonce, data };
 		<Account<Test>>::insert(account_id.clone(), account_info);
 
 		// Check test preconditions.
@@ -249,10 +246,7 @@ fn try_mutate_exists_account_retained() {
 		let nonce = 10;
 		let data = 100;
 
-		let account_info = AccountInfo {
-			nonce,
-			data,
-		};
+		let account_info = AccountInfo { nonce, data };
 		<Account<Test>>::insert(account_id.clone(), account_info);
 
 		// Check test preconditions.
