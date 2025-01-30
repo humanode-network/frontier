@@ -162,11 +162,9 @@ fn try_mutate_exists_account_updated() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
-		let nonce = 10;
-		let data = 100;
-
-		let account_info = AccountInfo { nonce, data };
-		<Account<Test>>::insert(account_id.clone(), account_info);
+		let nonce = 1;
+		let data = 1;
+		<Account<Test>>::insert(account_id.clone(), AccountInfo { nonce, data });
 
 		// Check test preconditions.
 		assert!(EvmSystem::account_exists(&account_id));
