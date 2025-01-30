@@ -8,7 +8,10 @@
 use frame_support::traits::StoredMap;
 use scale_codec::{Decode, Encode, FullCodec, MaxEncodedLen};
 use scale_info::TypeInfo;
-use sp_runtime::{traits::{Zero, One}, DispatchError, RuntimeDebug};
+use sp_runtime::{
+	traits::{One, Zero},
+	DispatchError, RuntimeDebug,
+};
 
 pub mod migrations;
 
