@@ -37,8 +37,6 @@ const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 pub struct AccountInfo<Index, AccountData> {
 	/// The number of transactions this account has sent.
 	pub nonce: Index,
-	/// An indicator representing whether the account is managed by EVM or not.
-	pub managed_by_evm: bool,
 	/// The additional data that belongs to this account. Used to store the balance(s) in a lot of
 	/// chains.
 	pub data: AccountData,
@@ -155,17 +153,6 @@ impl<T: Config> Pallet<T> {
 		Account::<T>::get(who).nonce
 	}
 
-	/// Create an account.
-	pub fn create_account(who: &<T as Config>::AccountId) -> AccountCreationOutcome {
-		if Self::account_exists(who) {
-			return AccountCreationOutcome::AlreadyExists;
-		}
-
-		Account::<T>::insert(who.clone(), AccountInfo::<_, _>::default());
-		Self::on_created_account(who.clone());
-		AccountCreationOutcome::Created
-	}
-
 	/// Increment a particular account's nonce by 1.
 	pub fn inc_account_nonce(who: &<T as Config>::AccountId) {
 		let is_new_account = Account::<T>::mutate_exists(who, |maybe_account| {
@@ -181,6 +168,17 @@ impl<T: Config> Pallet<T> {
 		if is_new_account {
 			Self::on_created_account(who.clone());
 		}
+	}
+
+	/// Create an account.
+	pub fn create_account(who: &<T as Config>::AccountId) -> AccountCreationOutcome {
+		if Self::account_exists(who) {
+			return AccountCreationOutcome::AlreadyExists;
+		}
+
+		Account::<T>::insert(who.clone(), AccountInfo::<_, _>::default());
+		Self::on_created_account(who.clone());
+		AccountCreationOutcome::Created
 	}
 }
 
