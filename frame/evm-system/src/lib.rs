@@ -166,6 +166,32 @@ impl<T: Config> Pallet<T> {
 		Account::<T>::get(who).nonce
 	}
 
+	/// Create an account.
+	pub fn create_account(who: &<T as Config>::AccountId) -> AccountCreationOutcome {
+		if Self::account_exists(who) {
+			return AccountCreationOutcome::AlreadyExists;
+		}
+
+		Account::<T>::insert(who.clone(), AccountInfo::<_, _>::default());
+		Self::on_created_account(who.clone());
+		AccountCreationOutcome::Created
+	}
+
+	/// Remove an account.
+	pub fn remove_account(who: &<T as Config>::AccountId) -> AccountRemovalOutcome {
+		if !Self::account_exists(who) {
+			return AccountRemovalOutcome::DidNotExist;
+		}
+
+		if Account::<T>::get(who).data != <T as Config>::AccountData::default() {
+			return AccountRemovalOutcome::Retained;
+		}
+
+		Account::<T>::remove(who);
+		Self::on_killed_account(who.clone());
+		AccountRemovalOutcome::Reaped
+	}
+
 	/// Increment a particular account's nonce by 1.
 	pub fn inc_account_nonce(who: &<T as Config>::AccountId) {
 		let is_new_account = Account::<T>::mutate_exists(who, |maybe_account| {
