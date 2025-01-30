@@ -191,11 +191,11 @@ impl<T: Config> StoredMap<<T as Config>::AccountId, <T as Config>::AccountData> 
 		k: &<T as Config>::AccountId,
 		f: impl FnOnce(&mut Option<<T as Config>::AccountData>) -> Result<R, E>,
 	) -> Result<R, E> {
-		let (mut maybe_account_data, managed_by_evm, was_providing) = if Self::account_exists(k) {
+		let (mut maybe_account_data, nonce, was_providing) = if Self::account_exists(k) {
 			let account_info = Account::<T>::get(k);
 			(Some(account_info.data), account_info.managed_by_evm, true)
 		} else {
-			(None, false, false)
+			(None, 0, false)
 		};
 
 		let result = f(&mut maybe_account_data)?;
@@ -209,7 +209,7 @@ impl<T: Config> StoredMap<<T as Config>::AccountId, <T as Config>::AccountData> 
 				Account::<T>::mutate(k, |a| a.data = data);
 			}
 			(None, true) => {
-				if managed_by_evm {
+				if nonce != 0 {
 					Account::<T>::mutate(k, |a| a.data = Default::default());
 				} else {
 					Account::<T>::remove(k);
