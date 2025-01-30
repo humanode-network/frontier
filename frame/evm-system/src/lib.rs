@@ -8,7 +8,7 @@
 use frame_support::traits::StoredMap;
 use scale_codec::{Decode, Encode, FullCodec, MaxEncodedLen};
 use scale_info::TypeInfo;
-use sp_runtime::{traits::One, DispatchError, RuntimeDebug};
+use sp_runtime::{traits::{Zero, One}, DispatchError, RuntimeDebug};
 
 pub mod migrations;
 
@@ -189,9 +189,9 @@ impl<T: Config> StoredMap<<T as Config>::AccountId, <T as Config>::AccountData> 
 	) -> Result<R, E> {
 		let (mut maybe_account_data, nonce, was_providing) = if Self::account_exists(k) {
 			let account_info = Account::<T>::get(k);
-			(Some(account_info.data), account_info.managed_by_evm, true)
+			(Some(account_info.data), account_info.nonce, true)
 		} else {
-			(None, 0, false)
+			(None, <T as Config>::Index::zero(), false)
 		};
 
 		let result = f(&mut maybe_account_data)?;
@@ -205,7 +205,7 @@ impl<T: Config> StoredMap<<T as Config>::AccountId, <T as Config>::AccountData> 
 				Account::<T>::mutate(k, |a| a.data = data);
 			}
 			(None, true) => {
-				if nonce != 0 {
+				if nonce != <T as Config>::Index::zero() {
 					Account::<T>::mutate(k, |a| a.data = Default::default());
 				} else {
 					Account::<T>::remove(k);
