@@ -228,11 +228,11 @@ impl<T: Config> fp_evm::AccountProvider for Pallet<T> {
 	type AccountId = <T as Config>::AccountId;
 	type Index = <T as Config>::Index;
 
-	fn create_account(who: &Self::AccountId) {
+	fn create_account(_who: &Self::AccountId) {
 		// Do nothing.
 	}
 
-	fn on_account_mark_deleted(who: &Self::AccountId) {
+	fn on_account_mark_deleted(_who: &Self::AccountId) {
 		// Do nothing.
 	}
 
