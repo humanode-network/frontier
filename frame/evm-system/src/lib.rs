@@ -110,14 +110,6 @@ pub mod pallet {
 		/// An account was reaped.
 		KilledAccount { account: <T as Config>::AccountId },
 	}
-
-	#[pallet::error]
-	pub enum Error<T> {
-		/// The account already exists in case creating it.
-		AccountAlreadyExist,
-		/// The account doesn't exist in case removing it.
-		AccountNotExist,
-	}
 }
 
 /// The outcome of the account creation operation.
