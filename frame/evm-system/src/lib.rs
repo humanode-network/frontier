@@ -225,7 +225,7 @@ impl<T: Config> fp_evm::AccountProvider for Pallet<T> {
 	}
 
 	fn on_account_mark_deleted(_who: &Self::AccountId) {
-		// Do nothing.
+		// Do nothing as account state shouldn't be modified.
 	}
 
 	fn account_nonce(who: &Self::AccountId) -> Self::Index {
