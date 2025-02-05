@@ -13,8 +13,6 @@ use sp_runtime::{
 	DispatchError, RuntimeDebug,
 };
 
-pub mod migrations;
-
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
