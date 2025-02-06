@@ -795,7 +795,7 @@ impl<T: Config> Pallet<T> {
 	pub fn remove_account(address: &H160) {
 		if <AccountCodes<T>>::contains_key(address) {
 			let account_id = T::AddressMapping::into_account_id(*address);
-			T::AccountProvider::on_account_mark_deleted(&account_id);
+			T::AccountProvider::on_account_self_destruct(&account_id);
 		}
 
 		<AccountCodes<T>>::remove(address);
@@ -1070,7 +1070,7 @@ impl<T: frame_system::Config> AccountProvider for NativeSystemAccountProvider<T>
 	fn create_account(who: &Self::AccountId) {
 		let _ = frame_system::Pallet::<T>::inc_sufficients(&who);
 	}
-	fn on_account_mark_deleted(who: &Self::AccountId) {
+	fn on_account_self_destruct(who: &Self::AccountId) {
 		let _ = frame_system::Pallet::<T>::dec_sufficients(&who);
 	}
 }

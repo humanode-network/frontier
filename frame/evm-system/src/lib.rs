@@ -222,7 +222,7 @@ impl<T: Config> fp_evm::AccountProvider for Pallet<T> {
 		let _ = Self::create_account(who);
 	}
 
-	fn on_account_mark_deleted(_who: &Self::AccountId) {
+	fn on_account_self_destruct(_who: &Self::AccountId) {
 		// Do nothing as account state shouldn't be modified.
 	}
 
