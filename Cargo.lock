@@ -5439,25 +5439,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-evm-balances"
-version = "1.0.0-dev"
-dependencies = [
- "fp-evm",
- "frame-support",
- "frame-system",
- "log",
- "pallet-evm",
- "pallet-evm-system",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-evm-chain-id"
 version = "1.0.0-dev"
 dependencies = [
@@ -5570,23 +5551,6 @@ dependencies = [
  "pallet-evm-test-vector-support",
  "ripemd",
  "sp-io",
-]
-
-[[package]]
-name = "pallet-evm-system"
-version = "1.0.0-dev"
-dependencies = [
- "fp-evm",
- "frame-support",
- "frame-system",
- "log",
- "mockall",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
