@@ -26,10 +26,10 @@ pub trait AccountProvider {
 	///
 	/// The account associated with new created address EVM.
 	fn create_account(who: &Self::AccountId);
-	/// Removes an account from accounts records.
+	/// A hook on account affected by executing selfdestruct opcode.
 	///
-	/// The account associated with removed address from EVM.
-	fn remove_account(who: &Self::AccountId);
+	/// The account associated with affected address in EVM.
+	fn on_account_self_destruct(who: &Self::AccountId);
 	/// Return current account nonce value.
 	///
 	/// Used to represent account basic information in EVM format.
