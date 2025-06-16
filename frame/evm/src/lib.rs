@@ -1066,9 +1066,9 @@ pub struct NativeSystemAccountProvider<T>(sp_std::marker::PhantomData<T>);
 
 impl<T: frame_system::Config> AccountProvider for NativeSystemAccountProvider<T> {
 	type AccountId = T::AccountId;
-	type Index = T::Index;
+	type Nonce = T::Nonce;
 
-	fn account_nonce(who: &Self::AccountId) -> Self::Index {
+	fn account_nonce(who: &Self::AccountId) -> Self::Nonce {
 		frame_system::Pallet::<T>::account_nonce(&who)
 	}
 
